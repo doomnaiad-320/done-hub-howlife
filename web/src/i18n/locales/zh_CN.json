@@ -739,6 +739,8 @@
     "maxTokens": "最大tokens",
     "inputModality": "输入模态",
     "outputModality": "输出模态",
+    "apiEndpoints": "API端点",
+    "apiEndpointsDesc": "模型支持的接口端点信息",
     "priceDetails": "价格明细",
     "priceNote": "不同分组,对应的价格也随之不同,渠道组需要在令牌管理中切换。",
     "otherInfo": "其他信息",

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
-import { AppBar, Box, CssBaseline, Toolbar, Container, useMediaQuery } from '@mui/material';
+import { AppBar, Box, CssBaseline, Toolbar, useMediaQuery } from '@mui/material';
 import Header from './Header';
 import Footer from 'ui-component/Footer';
 
@@ -28,11 +28,11 @@ const MinimalLayout = () => {
           borderRadius:0
         }}
       >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ px: { xs: 1.5, sm: 2, md: 3 }, minHeight: '64px', height: '64px' }}>
+        <Box sx={{ width: '100%', px: { xs: 1.5, sm: 3 } }}>
+          <Toolbar sx={{ px: 0, minHeight: '64px', height: '64px' }}>
             <Header />
           </Toolbar>
-        </Container>
+        </Box>
       </AppBar>
       <Box
         sx={{

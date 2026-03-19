@@ -638,6 +638,8 @@
     "maxTokens": "Max Tokens",
     "inputModality": "Input Modality",
     "outputModality": "Output Modality",
+    "apiEndpoints": "API Endpoints",
+    "apiEndpointsDesc": "Supported API request endpoints for this model.",
     "priceDetails": "Price Details",
     "priceNote": "Different groups have different prices. Switch groups in token management.",
     "otherInfo": "Other Information",

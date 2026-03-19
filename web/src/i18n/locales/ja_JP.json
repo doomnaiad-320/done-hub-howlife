@@ -588,6 +588,8 @@
     "maxTokens": "最大トークン数",
     "inputModality": "入力モダリティ",
     "outputModality": "出力モダリティ",
+    "apiEndpoints": "APIエンドポイント",
+    "apiEndpointsDesc": "このモデルで利用できるAPIリクエストのエンドポイント情報",
     "priceDetails": "価格詳細",
     "priceNote": "グループによって価格が異なります。トークン管理でグループを切り替えてください。",
     "otherInfo": "その他の情報",

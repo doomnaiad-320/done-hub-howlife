@@ -1,0 +1,55 @@
+# Server runtime environment for done-hub
+# This file is not auto-loaded by the binary.
+# Use it with systemd EnvironmentFile= or:
+#   set -a; source .envserver; set +a; ./done-hub-linux-amd64
+
+PORT=3000
+GIN_MODE=release
+TZ=Asia/Shanghai
+LOG_LEVEL=info
+LOG_DIR=./logs
+
+# Required secrets
+# Keep these stable after first production deployment.
+SESSION_SECRET=change-this-session-secret-to-a-long-random-string-64chars-min
+USER_TOKEN_SECRET=change-this-user-token-secret-to-a-long-random-string-64chars-min
+HASHIDS_SALT=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+
+# Database
+# PostgreSQL default recommendation for server deployment.
+# Replace username/password/host/dbname to your real values.
+SQL_DSN=postgres://donehub:change-this-db-password@127.0.0.1:5432/donehub?sslmode=disable
+
+# Pool tuning
+# Note: SQL_MAX_LIFETIME is interpreted by current code in seconds, not minutes.
+SQL_MAX_IDLE_CONNS=50
+SQL_MAX_OPEN_CONNS=200
+SQL_MAX_LIFETIME=1800
+
+# Network and runtime
+CONNECT_TIMEOUT=10
+RELAY_TIMEOUT=600
+GLOBAL_API_RATE_LIMIT=300
+GLOBAL_WEB_RATE_LIMIT=300
+
+# Cache / batch write
+# For single-node startup, Redis is optional. Leave empty to disable.
+REDIS_CONN_STRING=
+REDIS_DB=0
+MEMORY_CACHE_ENABLED=false
+SYNC_FREQUENCY=600
+BATCH_UPDATE_ENABLED=true
+BATCH_UPDATE_INTERVAL=5
+
+# Optional server behavior
+NODE_TYPE=master
+AUTO_PRICE_UPDATES=false
+SQLITE_BUSY_TIMEOUT=3000
+
+# Optional when this node is behind another frontend domain or in multi-node mode
+# FRONTEND_BASE_URL=https://your-domain.example.com
+# CHANNEL_UPDATE_FREQUENCY=1440
+# CHANNEL_TEST_FREQUENCY=1440
+# POLLING_INTERVAL=5
+# TIKTOKEN_CACHE_DIR=./data/tiktoken
+# DATA_GYM_CACHE_DIR=./data/tiktoken

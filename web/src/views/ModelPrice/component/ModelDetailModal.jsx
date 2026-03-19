@@ -24,6 +24,7 @@ import Label from 'ui-component/Label';
 import { MODALITY_OPTIONS } from 'constants/Modality';
 import { copy } from 'utils/common';
 import { useTranslation } from 'react-i18next';
+import { inferApiEndpoints, parseJsonArray } from './modelEndpointUtils';
 
 // ----------------------------------------------------------------------
 
@@ -31,26 +32,15 @@ export default function ModelDetailModal({ open, onClose, model, provider, model
   const theme = useTheme();
   const { t } = useTranslation();
   if (!model) return null;
-  // 解析模态和标签
-  const getModalities = (modalitiesStr) => {
-    try {
-      return JSON.parse(modalitiesStr || '[]');
-    } catch (e) {
-      return [];
-    }
-  };
-
-  const getTags = (tagsStr) => {
-    try {
-      return JSON.parse(tagsStr || '[]');
-    } catch (e) {
-      return [];
-    }
-  };
-
-  const inputModalities = modelInfo ? getModalities(modelInfo.input_modalities) : [];
-  const outputModalities = modelInfo ? getModalities(modelInfo.output_modalities) : [];
-  const tags = modelInfo ? getTags(modelInfo.tags) : [];
+  const inputModalities = modelInfo ? parseJsonArray(modelInfo.input_modalities) : [];
+  const outputModalities = modelInfo ? parseJsonArray(modelInfo.output_modalities) : [];
+  const tags = modelInfo ? parseJsonArray(modelInfo.tags) : [];
+  const apiEndpoints = inferApiEndpoints({
+    model,
+    provider,
+    inputModalities,
+    outputModalities
+  });
 
   return (
     <Dialog
@@ -76,6 +66,8 @@ export default function ModelDetailModal({ open, onClose, model, provider, model
                   width: 48,
                   height: 48,
                   backgroundColor: theme.palette.mode === 'dark' ? '#fff' : theme.palette.background.paper,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  boxShadow: theme.palette.mode === 'dark' ? '0 6px 14px rgba(0,0,0,0.3)' : '0 6px 14px rgba(15,23,42,0.12)',
                   '.MuiAvatar-img': {
                     objectFit: 'contain',
                     padding: '6px'
@@ -228,6 +220,65 @@ export default function ModelDetailModal({ open, onClose, model, provider, model
                 </Stack>
               </Stack>
             )}
+          </Stack>
+        </Box>
+
+        <Divider sx={{ my: 3 }} />
+
+        {/* API端点 */}
+        <Box sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+            <Icon icon="eva:link-2-outline" width={20} height={20} />
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              {t('modelpricePage.apiEndpoints')}
+            </Typography>
+          </Stack>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+            {t('modelpricePage.apiEndpointsDesc')}
+          </Typography>
+
+          <Stack spacing={1.25}>
+            {apiEndpoints.map((endpoint) => (
+              <Box
+                key={`${endpoint.protocol}-${endpoint.path}`}
+                sx={{
+                  border: `1px solid ${theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : alpha('#000', 0.08)}`,
+                  borderRadius: '10px',
+                  px: 1.5,
+                  py: 1.25,
+                  backgroundColor: theme.palette.mode === 'dark' ? alpha('#fff', 0.02) : alpha('#000', 0.012)
+                }}
+              >
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={{ xs: 1, sm: 1.5 }}
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                >
+                  <Label
+                    color={endpoint.color}
+                    variant="soft"
+                    sx={{ minWidth: 72, justifyContent: 'center', textTransform: 'lowercase', fontWeight: 700 }}
+                  >
+                    {endpoint.protocol}
+                  </Label>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      flex: 1,
+                      fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
+                      fontSize: '0.8125rem',
+                      wordBreak: 'break-all'
+                    }}
+                  >
+                    {endpoint.path}
+                  </Typography>
+                  <Label color="success" variant="outlined" sx={{ minWidth: 56, justifyContent: 'center', fontWeight: 700 }}>
+                    {endpoint.method}
+                  </Label>
+                </Stack>
+              </Box>
+            ))}
           </Stack>
         </Box>
 

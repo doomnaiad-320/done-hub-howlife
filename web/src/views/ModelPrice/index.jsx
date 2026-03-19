@@ -538,6 +538,8 @@ export default function ModelPrice() {
                           width: 20,
                           height: 20,
                           backgroundColor: theme.palette.mode === 'dark' ? '#fff' : theme.palette.background.paper,
+                          border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
+                          boxShadow: theme.palette.mode === 'dark' ? '0 2px 6px rgba(0,0,0,0.24)' : '0 2px 6px rgba(15,23,42,0.1)',
                           '.MuiAvatar-img': {
                             objectFit: 'contain',
                             padding: '2px'
@@ -1046,9 +1048,20 @@ export default function ModelPrice() {
         {filteredModels.length > 0 ? (
           <>
             {viewMode === 'card' ? (
-              <Grid container spacing={3}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: 'repeat(1, minmax(0, 1fr))',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    md: 'repeat(3, minmax(0, 1fr))',
+                    lg: 'repeat(5, minmax(0, 1fr))'
+                  },
+                  gap: 2
+                }}
+              >
                 {paginatedModels.map((model) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={model.model}>
+                  <Box key={model.model}>
                     <ModelCard
                       model={model.model}
                       provider={model.provider}
@@ -1061,9 +1074,9 @@ export default function ModelPrice() {
                       formatPrice={formatPrice}
                       onViewDetail={() => handleViewDetail(model)}
                     />
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
             ) : (
               <TableContainer component={Paper} sx={{ boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }}>
                 <Table>
@@ -1139,6 +1152,8 @@ export default function ModelPrice() {
                                 width: 24,
                                 height: 24,
                                 backgroundColor: '#fff',
+                                border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
+                                boxShadow: theme.palette.mode === 'dark' ? '0 2px 6px rgba(0,0,0,0.24)' : '0 2px 6px rgba(15,23,42,0.1)',
                                 '& .MuiAvatar-img': {
                                   objectFit: 'contain',
                                   padding: '2px'
