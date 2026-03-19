@@ -588,6 +588,7 @@
     "user": "User"
   },
   "model_price": "Model Price",
+  "model_management": "Model Management",
   "modelpricePage": {
     "availableModels": "Available Models",
     "channelType": "Supplier",

@@ -538,6 +538,7 @@
     "user": "ユーザー"
   },
   "model_price": "モデル価格",
+  "model_management": "モデル管理",
   "modelpricePage": {
     "availableModels": "利用可能なモデル",
     "channelType": "サプライヤー",

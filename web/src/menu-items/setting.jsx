@@ -15,7 +15,8 @@ const icons = {
   IconUsers: () => <Icon width={20} icon="solar:users-group-rounded-bold-duotone"/>,
   IconModel: () => <Icon width={20} icon="mingcute:ai-fill"/>,
   IconTicket: () => <Icon width={20} icon="solar:ticket-bold-duotone"/>,
-  IconInfo: () => <Icon width={20} icon="solar:info-circle-bold-duotone"/>
+  IconInfo: () => <Icon width={20} icon="solar:info-circle-bold-duotone"/>,
+  IconBox: () => <Icon width={20} icon="solar:box-bold-duotone"/>
 }
 
 const Setting = {
@@ -54,6 +55,15 @@ const Setting = {
           type: 'item',
           url: '/panel/user_group',
           icon: icons.IconUsers,
+          breadcrumbs: false,
+          isAdmin: true
+        },
+        {
+          id: 'model_management',
+          title: '模型管理',
+          type: 'item',
+          url: '/panel/model_management',
+          icon: icons.IconBox,
           breadcrumbs: false,
           isAdmin: true
         },

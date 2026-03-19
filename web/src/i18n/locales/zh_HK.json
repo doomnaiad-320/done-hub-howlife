@@ -542,6 +542,7 @@
     "user": "用戶"
   },
   "model_price": "可用模型",
+  "model_management": "模型管理",
   "modelpricePage": {
     "availableModels": "可用模型",
     "channelType": "供應商",

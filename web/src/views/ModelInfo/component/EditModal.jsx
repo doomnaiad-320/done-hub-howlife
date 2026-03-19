@@ -43,7 +43,7 @@ const originInputs = {
 };
 
 
-const EditModal = ({ open, editId, onCancel, onOk, existingModels = [] }) => {
+const EditModal = ({ open, editId, onCancel, onOk, existingModels = [], initialValues = null }) => {
     const theme = useTheme();
     const [inputs, setInputs] = useState(originInputs);
     const [modelOptions, setModelOptions] = useState([]);
@@ -122,11 +122,14 @@ const EditModal = ({ open, editId, onCancel, onOk, existingModels = [] }) => {
         if (editId) {
             loadModelInfo().then();
         } else {
-            setInputs(originInputs);
+            setInputs({
+                ...originInputs,
+                ...(initialValues || {})
+            });
             setOriginalModel('');
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editId]);
+    }, [editId, initialValues, open]);
 
     const safeJsonParse = (jsonString) => {
         try {
@@ -484,5 +487,6 @@ EditModal.propTypes = {
     editId: PropTypes.number,
     onCancel: PropTypes.func,
     onOk: PropTypes.func,
-    existingModels: PropTypes.array
+    existingModels: PropTypes.array,
+    initialValues: PropTypes.object
 };
