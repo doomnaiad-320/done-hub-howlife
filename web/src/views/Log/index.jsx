@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { showError, showSuccess, trims, useIsAdmin } from 'utils/common'
+import { renderNumber, renderQuota, showError, showSuccess, trims, useIsAdmin } from 'utils/common'
 
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -38,6 +38,20 @@ import { useTheme } from '@mui/material/styles'
 import { useSelector } from 'react-redux'
 import { useLogType } from './type/LogType'
 
+const emptyLogStats = {
+  quota: 0,
+  request_count: 0,
+  success_count: 0,
+  failure_count: 0,
+  failure_rate: 0,
+  prompt_tokens: 0,
+  completion_tokens: 0,
+  avg_request_time: 0,
+  avg_rpm: 0,
+  avg_tpm: 0,
+  time_span_seconds: 0
+}
+
 export default function Log() {
   const { t } = useTranslation()
   const LogType = useLogType()
@@ -59,8 +73,10 @@ export default function Log() {
   const [rowsPerPage, setRowsPerPage] = useState(() => getPageSize('log'))
   const [listCount, setListCount] = useState(0)
   const [searching, setSearching] = useState(false)
+  const [statsLoading, setStatsLoading] = useState(false)
   const [toolBarValue, setToolBarValue] = useState(originalKeyword)
   const [searchKeyword, setSearchKeyword] = useState(originalKeyword)
+  const [logStats, setLogStats] = useState(emptyLogStats)
   const [refreshFlag, setRefreshFlag] = useState(false)
   const { userGroup } = useSelector((state) => state.account)
   const theme = useTheme()
@@ -162,32 +178,38 @@ export default function Log() {
     setSearchKeyword(updatedToolBarValue)
   }
 
+  const buildFilterParams = useCallback((keyword) => {
+    const requestKeyword = trims(keyword)
+
+    if (requestKeyword._timestamp) {
+      delete requestKeyword._timestamp
+    }
+
+    if (!userIsAdmin) {
+      delete requestKeyword.username
+      delete requestKeyword.channel_id
+    }
+
+    return requestKeyword
+  }, [userIsAdmin])
+
   const fetchData = useCallback(
     async(page, rowsPerPage, keyword, order, orderBy) => {
       setSearching(true)
-      keyword = trims(keyword)
-
-      // 移除仅用于触发状态更新的时间戳字段
-      if (keyword._timestamp) {
-        delete keyword._timestamp
-      }
+      const requestKeyword = buildFilterParams(keyword)
 
       try {
         if (orderBy) {
           orderBy = order === 'desc' ? '-' + orderBy : orderBy
         }
         const url = userIsAdmin ? '/api/log/' : '/api/log/self/'
-        if (!userIsAdmin) {
-          delete keyword.username
-          delete keyword.channel_id
-        }
 
         const res = await API.get(url, {
           params: {
             page: page + 1,
             size: rowsPerPage,
             order: orderBy,
-            ...keyword
+            ...requestKeyword
           }
         })
         const { success, message, data } = res.data
@@ -202,8 +224,29 @@ export default function Log() {
       }
       setSearching(false)
     },
-    [userIsAdmin]
+    [buildFilterParams, userIsAdmin]
   )
+
+  const fetchStats = useCallback(async(keyword) => {
+    setStatsLoading(true)
+
+    try {
+      const url = userIsAdmin ? '/api/log/stat' : '/api/log/self/stat'
+      const res = await API.get(url, {
+        params: buildFilterParams(keyword)
+      })
+      const { success, message, data } = res.data
+      if (success) {
+        setLogStats({ ...emptyLogStats, ...data })
+      } else {
+        showError(message)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [buildFilterParams, userIsAdmin])
 
   // 处理刷新
   const handleRefresh = async() => {
@@ -223,12 +266,7 @@ export default function Log() {
 
     setExporting(true)
     try {
-      const exportKeyword = trims(searchKeyword)
-
-      // 移除仅用于触发状态更新的时间戳字段
-      if (exportKeyword._timestamp) {
-        delete exportKeyword._timestamp
-      }
+      const exportKeyword = buildFilterParams(searchKeyword)
 
       let orderBy_export = orderBy
       if (orderBy_export) {
@@ -239,11 +277,6 @@ export default function Log() {
       const params = {
         order: orderBy_export,
         ...exportKeyword
-      }
-
-      if (!userIsAdmin) {
-        delete params.username
-        delete params.channel_id
       }
 
       // 使用fetch进行同步请求，提供更好的错误处理
@@ -288,11 +321,46 @@ export default function Log() {
     } finally {
       setExporting(false)
     }
-  }, [searchKeyword, order, orderBy, userIsAdmin, t, exporting])
+  }, [buildFilterParams, searchKeyword, order, orderBy, userIsAdmin, t, exporting])
 
   useEffect(() => {
     fetchData(page, rowsPerPage, searchKeyword, order, orderBy)
   }, [page, rowsPerPage, searchKeyword, order, orderBy, fetchData, refreshFlag])
+
+  useEffect(() => {
+    fetchStats(searchKeyword)
+  }, [searchKeyword, fetchStats])
+
+  const summaryCards = [
+    {
+      title: t('logPage.summaryQuota'),
+      value: renderQuota(logStats.quota || 0, 6)
+    },
+    {
+      title: t('logPage.summaryRequests'),
+      value: renderNumber(logStats.request_count || 0)
+    },
+    {
+      title: t('logPage.summarySuccess'),
+      value: renderNumber(logStats.success_count || 0)
+    },
+    {
+      title: t('logPage.summaryFailure'),
+      value: `${renderNumber(logStats.failure_count || 0)} · ${formatPercentage(logStats.failure_rate)}`
+    },
+    {
+      title: t('logPage.summaryAvgRPM'),
+      value: formatThroughput(logStats.avg_rpm)
+    },
+    {
+      title: t('logPage.summaryAvgTPM'),
+      value: formatThroughput(logStats.avg_tpm)
+    },
+    {
+      title: t('logPage.summaryAvgDuration'),
+      value: formatDuration(logStats.avg_request_time)
+    }
+  ]
 
   return (
     <>
@@ -531,6 +599,54 @@ export default function Log() {
             </Menu>
           </Container>
         </Toolbar>
+        <Box sx={{ px: 3, pb: 2.25 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {t('logPage.summarySectionTitle')}
+            </Typography>
+          </Stack>
+          {statsLoading && <LinearProgress sx={{ mb: 1.25, borderRadius: 999 }}/>}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1
+            }}
+          >
+            {summaryCards.map((card) => (
+              <Box
+                key={card.title}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 999,
+                  px: 1.5,
+                  py: 0.875,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  bgcolor: 'background.default',
+                  minHeight: 0,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontWeight: 600, lineHeight: 1.2 }}
+                >
+                  {card.title}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 700, lineHeight: 1.2, color: 'text.primary' }}
+                >
+                  {card.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
         {searching && <LinearProgress/>}
         <PerfectScrollbar component="div">
           <TableContainer sx={{ overflow: 'unset' }}>
@@ -650,4 +766,31 @@ export default function Log() {
       </Card>
     </>
   )
+}
+
+function formatPercentage(value) {
+  const numericValue = Number(value || 0) * 100
+  return `${numericValue.toFixed(numericValue >= 10 ? 1 : 2)}%`
+}
+
+function formatThroughput(value) {
+  const numericValue = Number(value || 0)
+  if (numericValue >= 100) {
+    return Math.round(numericValue).toLocaleString()
+  }
+  if (numericValue >= 10) {
+    return numericValue.toFixed(1).replace(/\.0$/, '')
+  }
+  return numericValue.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
+}
+
+function formatDuration(value) {
+  const numericValue = Number(value || 0)
+  if (numericValue <= 0) {
+    return '0 ms'
+  }
+  if (numericValue >= 1000) {
+    return `${(numericValue / 1000).toFixed(2)} s`
+  }
+  return `${Math.round(numericValue)} ms`
 }

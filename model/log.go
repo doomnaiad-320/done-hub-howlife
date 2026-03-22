@@ -169,6 +169,22 @@ type LogsListParams struct {
 	SourceIp       string `form:"source_ip"`
 }
 
+type LogsSummary struct {
+	Quota            int64   `gorm:"column:quota" json:"quota"`
+	RequestCount     int64   `gorm:"column:request_count" json:"request_count"`
+	SuccessCount     int64   `gorm:"column:success_count" json:"success_count"`
+	FailureCount     int64   `json:"failure_count"`
+	FailureRate      float64 `json:"failure_rate"`
+	PromptTokens     int64   `gorm:"column:prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int64   `gorm:"column:completion_tokens" json:"completion_tokens"`
+	AvgRequestTime   float64 `gorm:"column:avg_request_time" json:"avg_request_time"`
+	AvgRPM           float64 `json:"avg_rpm"`
+	AvgTPM           float64 `json:"avg_tpm"`
+	TimeSpanSeconds  int64   `json:"time_span_seconds"`
+	FirstCreatedAt   int64   `gorm:"column:first_created_at" json:"-"`
+	LastCreatedAt    int64   `gorm:"column:last_created_at" json:"-"`
+}
+
 var allowedLogsOrderFields = map[string]bool{
 	"created_at": true,
 	"channel_id": true,
@@ -179,21 +195,14 @@ var allowedLogsOrderFields = map[string]bool{
 	"source_ip":  true,
 }
 
-func GetLogsList(params *LogsListParams) (*DataResult[Log], error) {
-	var tx *gorm.DB
-	var logs []*Log
-
-	tx = DB.Preload("Channel", func(db *gorm.DB) *gorm.DB {
-		return db.Select("id, name")
-	})
-
+func applyLogsListFilters(tx *gorm.DB, params *LogsListParams, allowUsername bool) *gorm.DB {
 	if params.LogType != LogTypeUnknown {
 		tx = tx.Where("type = ?", params.LogType)
 	}
 	if params.ModelName != "" {
 		tx = tx.Where("model_name = ?", params.ModelName)
 	}
-	if params.Username != "" {
+	if allowUsername && params.Username != "" {
 		tx = tx.Where("username = ?", params.Username)
 	}
 	if params.TokenName != "" {
@@ -211,6 +220,17 @@ func GetLogsList(params *LogsListParams) (*DataResult[Log], error) {
 	if params.SourceIp != "" {
 		tx = tx.Where("source_ip = ?", params.SourceIp)
 	}
+	return tx
+}
+
+func GetLogsList(params *LogsListParams) (*DataResult[Log], error) {
+	var tx *gorm.DB
+	var logs []*Log
+
+	tx = DB.Preload("Channel", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id, name")
+	})
+	tx = applyLogsListFilters(tx, params, true)
 
 	return PaginateAndOrder[Log](tx, &params.PaginationParams, &logs, allowedLogsOrderFields)
 }
@@ -222,31 +242,7 @@ func GetAllLogsList(params *LogsListParams) ([]*Log, error) {
 	tx := DB.Preload("Channel", func(db *gorm.DB) *gorm.DB {
 		return db.Select("id, name")
 	})
-
-	if params.LogType != LogTypeUnknown {
-		tx = tx.Where("type = ?", params.LogType)
-	}
-	if params.ModelName != "" {
-		tx = tx.Where("model_name = ?", params.ModelName)
-	}
-	if params.Username != "" {
-		tx = tx.Where("username = ?", params.Username)
-	}
-	if params.TokenName != "" {
-		tx = tx.Where("token_name = ?", params.TokenName)
-	}
-	if params.StartTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", params.StartTimestamp)
-	}
-	if params.EndTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", params.EndTimestamp)
-	}
-	if params.ChannelId != 0 {
-		tx = tx.Where("channel_id = ?", params.ChannelId)
-	}
-	if params.SourceIp != "" {
-		tx = tx.Where("source_ip = ?", params.SourceIp)
-	}
+	tx = applyLogsListFilters(tx, params, true)
 
 	// Apply ordering
 	if params.Order != "" {
@@ -277,22 +273,7 @@ func GetUserLogsList(userId int, params *LogsListParams) (*DataResult[Log], erro
 	var logs []*Log
 
 	tx := DB.Where("user_id = ?", userId).Omit("id")
-
-	if params.LogType != LogTypeUnknown {
-		tx = tx.Where("type = ?", params.LogType)
-	}
-	if params.ModelName != "" {
-		tx = tx.Where("model_name = ?", params.ModelName)
-	}
-	if params.TokenName != "" {
-		tx = tx.Where("token_name = ?", params.TokenName)
-	}
-	if params.StartTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", params.StartTimestamp)
-	}
-	if params.EndTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", params.EndTimestamp)
-	}
+	tx = applyLogsListFilters(tx, params, false)
 
 	result, err := PaginateAndOrder[Log](tx, &params.PaginationParams, &logs, allowedLogsOrderFields)
 	if err != nil {
@@ -313,22 +294,7 @@ func GetAllUserLogsList(userId int, params *LogsListParams) ([]*Log, error) {
 	var logs []*Log
 
 	tx := DB.Where("user_id = ?", userId).Omit("id")
-
-	if params.LogType != LogTypeUnknown {
-		tx = tx.Where("type = ?", params.LogType)
-	}
-	if params.ModelName != "" {
-		tx = tx.Where("model_name = ?", params.ModelName)
-	}
-	if params.TokenName != "" {
-		tx = tx.Where("token_name = ?", params.TokenName)
-	}
-	if params.StartTimestamp != 0 {
-		tx = tx.Where("created_at >= ?", params.StartTimestamp)
-	}
-	if params.EndTimestamp != 0 {
-		tx = tx.Where("created_at <= ?", params.EndTimestamp)
-	}
+	tx = applyLogsListFilters(tx, params, false)
 
 	// Apply ordering
 	if params.Order != "" {
@@ -374,6 +340,71 @@ func SearchAllLogs(keyword string) (logs []*Log, err error) {
 func SearchUserLogs(userId int, keyword string) (logs []*Log, err error) {
 	err = DB.Where("user_id = ? and type = ?", userId, keyword).Order("id desc").Limit(config.MaxRecentItems).Omit("id").Find(&logs).Error
 	return logs, err
+}
+
+func GetLogsSummary(params *LogsListParams) (*LogsSummary, error) {
+	return getLogsSummary(DB.Model(&Log{}), params, true)
+}
+
+func GetUserLogsSummary(userId int, params *LogsListParams) (*LogsSummary, error) {
+	return getLogsSummary(DB.Model(&Log{}).Where("user_id = ?", userId), params, false)
+}
+
+func getLogsSummary(tx *gorm.DB, params *LogsListParams, allowUsername bool) (*LogsSummary, error) {
+	var summary LogsSummary
+
+	tx = applyLogsListFilters(tx, params, allowUsername)
+
+	selectSQL := fmt.Sprintf(`
+		COALESCE(SUM(CASE WHEN type = %d THEN quota ELSE 0 END), 0) AS quota,
+		COALESCE(SUM(CASE WHEN type = %d THEN 1 ELSE 0 END), 0) AS request_count,
+		COALESCE(SUM(CASE WHEN type = %d AND (request_time > 0 OR prompt_tokens > 0 OR completion_tokens > 0 OR quota > 0) THEN 1 ELSE 0 END), 0) AS success_count,
+		COALESCE(SUM(CASE WHEN type = %d THEN prompt_tokens ELSE 0 END), 0) AS prompt_tokens,
+		COALESCE(SUM(CASE WHEN type = %d THEN completion_tokens ELSE 0 END), 0) AS completion_tokens,
+		COALESCE(AVG(CASE WHEN type = %d AND request_time > 0 THEN request_time END), 0) AS avg_request_time,
+		COALESCE(MIN(CASE WHEN type = %d THEN created_at END), 0) AS first_created_at,
+		COALESCE(MAX(CASE WHEN type = %d THEN created_at END), 0) AS last_created_at
+	`,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+		LogTypeConsume,
+	)
+
+	if err := tx.Select(selectSQL).Scan(&summary).Error; err != nil {
+		return nil, err
+	}
+
+	summary.FailureCount = summary.RequestCount - summary.SuccessCount
+	if summary.FailureCount < 0 {
+		summary.FailureCount = 0
+	}
+
+	if summary.RequestCount > 0 {
+		summary.FailureRate = float64(summary.FailureCount) / float64(summary.RequestCount)
+	}
+
+	switch {
+	case params.StartTimestamp > 0 && params.EndTimestamp > params.StartTimestamp:
+		summary.TimeSpanSeconds = params.EndTimestamp - params.StartTimestamp
+	case summary.LastCreatedAt > summary.FirstCreatedAt:
+		summary.TimeSpanSeconds = summary.LastCreatedAt - summary.FirstCreatedAt
+	case summary.RequestCount > 0:
+		summary.TimeSpanSeconds = 60
+	}
+
+	if summary.TimeSpanSeconds > 0 {
+		minutes := float64(summary.TimeSpanSeconds) / 60
+		totalTokens := summary.PromptTokens + summary.CompletionTokens
+		summary.AvgRPM = float64(summary.RequestCount) / minutes
+		summary.AvgTPM = float64(totalTokens) / minutes
+	}
+
+	return &summary, nil
 }
 
 func SumUsedQuota(startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int) (quota int) {

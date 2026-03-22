@@ -111,52 +111,52 @@ func GetUserLogsList(c *gin.Context) {
 }
 
 func GetLogsStat(c *gin.Context) {
-	// logType, _ := strconv.Atoi(c.Query("type"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-
-	if checkLogTimeRange(c, startTimestamp, endTimestamp) {
+	var params model.LogsListParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
 		return
 	}
 
-	tokenName := c.Query("token_name")
-	username := c.Query("username")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	quotaNum := model.SumUsedQuota(startTimestamp, endTimestamp, modelName, username, tokenName, channel)
-	//tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, "")
+	if checkLogTimeRange(c, params.StartTimestamp, params.EndTimestamp) {
+		return
+	}
+
+	summary, err := model.GetLogsSummary(&params)
+	if err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": gin.H{
-			"quota": quotaNum,
-			//"token": tokenNum,
-		},
+		"data":    summary,
 	})
 }
 
 func GetLogsSelfStat(c *gin.Context) {
-	username := c.GetString("username")
-	// logType, _ := strconv.Atoi(c.Query("type"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	userId := c.GetInt("id")
 
-	if checkLogTimeRange(c, startTimestamp, endTimestamp) {
+	var params model.LogsListParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
 		return
 	}
 
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	quotaNum := model.SumUsedQuota(startTimestamp, endTimestamp, modelName, username, tokenName, channel)
-	//tokenNum := model.SumUsedToken(logType, startTimestamp, endTimestamp, modelName, username, tokenName)
+	if checkLogTimeRange(c, params.StartTimestamp, params.EndTimestamp) {
+		return
+	}
+
+	summary, err := model.GetUserLogsSummary(userId, &params)
+	if err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data": gin.H{
-			"quota": quotaNum,
-			//"token": tokenNum,
-		},
+		"data":    summary,
 	})
 }
 
