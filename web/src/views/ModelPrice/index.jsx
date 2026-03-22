@@ -2,49 +2,94 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import {
-  Card,
-  Stack,
-  Typography,
-  Box,
-  InputBase,
-  Paper,
-  IconButton,
-  Fade,
-  useMediaQuery,
-  Avatar,
-  ButtonBase,
-  Tooltip,
-  Grid,
-  Pagination,
-  ToggleButton,
-  ToggleButtonGroup as MuiToggleButtonGroup,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  MenuItem,
-  Select,
-  FormControl
-} from '@mui/material';
-import { Icon } from '@iconify/react';
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Eye,
+  Globe,
+  Grid2x2,
+  Layers3,
+  List,
+  Search,
+  SlidersHorizontal,
+  Tags,
+  Users,
+  X
+} from 'lucide-react';
 import { API } from 'utils/api';
-import { showError, ValueFormatter, copy, showSuccess } from 'utils/common';
-import { useTheme } from '@mui/material/styles';
-import CustomToggleButtonGroup from 'ui-component/ToggleButton';
-import { alpha } from '@mui/material/styles';
-import ModelCard from './component/ModelCard';
-import ModelDetailModal from './component/ModelDetailModal';
+import { showError, ValueFormatter, copy } from 'utils/common';
+import { cn } from 'components/public/utils';
 import { MODALITY_OPTIONS } from 'constants/Modality';
-import Label from 'ui-component/Label';
+import ModelCard from './component/ModelCard';
+import ModelDetailPanel from './component/ModelDetailPanel';
+import { parseJsonArray } from './component/modelEndpointUtils';
 
-// ----------------------------------------------------------------------
+const surfaceClass = 'rounded-[28px] border border-border bg-card shadow-sm';
+
+const filterToneMap = {
+  primary: 'border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+  info: 'border-sky-500/20 bg-sky-500/10 text-sky-700 hover:bg-sky-500/15 dark:text-sky-300',
+  success: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300',
+  warning: 'border-amber-500/20 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300',
+  error: 'border-rose-500/20 bg-rose-500/10 text-rose-700 hover:bg-rose-500/15 dark:text-rose-300'
+};
+
+const activeToneMap = {
+  primary: 'border-primary bg-primary/12 text-primary shadow-sm shadow-primary/10',
+  info: 'border-sky-500/40 bg-sky-500/14 text-sky-700 shadow-sm shadow-sky-500/10 dark:text-sky-300',
+  success: 'border-emerald-500/40 bg-emerald-500/14 text-emerald-700 shadow-sm shadow-emerald-500/10 dark:text-emerald-300',
+  warning: 'border-amber-500/40 bg-amber-500/14 text-amber-700 shadow-sm shadow-amber-500/10 dark:text-amber-300',
+  error: 'border-rose-500/40 bg-rose-500/14 text-rose-700 shadow-sm shadow-rose-500/10 dark:text-rose-300'
+};
+
+const getPageNumbers = (currentPage, totalPages) => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, 'ellipsis-right', totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [1, 'ellipsis-left', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, 'ellipsis-left', currentPage - 1, currentPage, currentPage + 1, 'ellipsis-right', totalPages];
+};
+
+const FilterChip = ({ active, onClick, children, icon, tone = 'primary', className, title }) => (
+  <button
+    type="button"
+    title={title}
+    onClick={onClick}
+    className={cn(
+      'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-all duration-200',
+      active ? activeToneMap[tone] || activeToneMap.primary : filterToneMap[tone] || filterToneMap.primary,
+      className
+    )}
+  >
+    {icon}
+    <span>{children}</span>
+  </button>
+);
+
+const SectionHeading = ({ icon: Icon, title, action }) => (
+  <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-background text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+    </div>
+    {action}
+  </div>
+);
+
 export default function ModelPrice() {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const ownedby = useSelector((state) => state.siteInfo?.ownedby);
+  const ownedby = useSelector((state) => state.siteInfo?.ownedby || []);
 
   const [availableModels, setAvailableModels] = useState({});
   const [modelInfoMap, setModelInfoMap] = useState({});
@@ -58,10 +103,7 @@ export default function ModelPrice() {
   const [selectedTag, setSelectedTag] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [viewMode, setViewMode] = useState('card'); // 'card' or 'list'
-
-  // 详情对话框状态
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('card');
   const [selectedModelDetail, setSelectedModelDetail] = useState(null);
 
   const unitOptions = [
@@ -71,7 +113,6 @@ export default function ModelPrice() {
 
   const pageSizeOptions = [20, 30, 60, 100];
 
-  // 获取可用模型
   const fetchAvailableModels = useCallback(async () => {
     try {
       const res = await API.get('/api/available_model');
@@ -86,13 +127,11 @@ export default function ModelPrice() {
     }
   }, []);
 
-  // 获取模型信息
   const fetchModelInfo = useCallback(async () => {
     try {
       const res = await API.get('/api/model_info/');
       const { success, message, data } = res.data;
       if (success) {
-        // 转换为 map 方便查找
         const infoMap = {};
         data.forEach((info) => {
           infoMap[info.model] = info;
@@ -106,14 +145,14 @@ export default function ModelPrice() {
     }
   }, []);
 
-  // 获取用户组
   const fetchUserGroupMap = useCallback(async () => {
     try {
       const res = await API.get('/api/user_group_map');
       const { success, message, data } = res.data;
       if (success) {
         setUserGroupMap(data);
-        setSelectedGroup(Object.keys(data)[0]);
+        const firstGroup = Object.keys(data)[0] || '';
+        setSelectedGroup((current) => current || firstGroup);
       } else {
         showError(message);
       }
@@ -128,26 +167,25 @@ export default function ModelPrice() {
     fetchUserGroupMap();
   }, [fetchAvailableModels, fetchModelInfo, fetchUserGroupMap]);
 
-  // 提取所有唯一标签
-  const allTags = [
-    ...new Set(
-      Object.values(modelInfoMap).flatMap((info) => {
-        try {
-          return JSON.parse(info.tags || '[]');
-        } catch (e) {
-          return [];
-        }
-      })
-    )
-  ];
+  const allTags = useMemo(
+    () =>
+      [
+        ...new Set(
+          Object.values(modelInfoMap).flatMap((info) => {
+            return parseJsonArray(info.tags);
+          })
+        )
+      ].sort((a, b) => a.localeCompare(b)),
+    [modelInfoMap]
+  );
 
-  // 格式化价格
   const formatPrice = (value, type) => {
     if (typeof value === 'number') {
       let nowUnit = '';
       let isM = unit === 'M';
       if (type === 'times') {
         isM = false;
+        nowUnit = t('modelpricePage.perRequestSuffix');
       }
       if (type === 'tokens') {
         nowUnit = `/ 1${unit}`;
@@ -157,54 +195,42 @@ export default function ModelPrice() {
     return value;
   };
 
-  // 过滤模型
   const filteredModels = useMemo(() => {
     return Object.entries(availableModels)
       .filter(([modelName, model]) => {
-        // 供应商筛选
-        if (selectedOwnedBy !== 'all' && model.owned_by !== selectedOwnedBy) return false;
+        if (selectedOwnedBy !== 'all' && model.owned_by !== selectedOwnedBy) {
+          return false;
+        }
 
-        // 仅显示可用
-        if (onlyShowAvailable && !model.groups.includes(selectedGroup)) return false;
+        if (onlyShowAvailable && (!selectedGroup || !model.groups.includes(selectedGroup))) {
+          return false;
+        }
 
-        // 搜索
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
           const modelInfo = modelInfoMap[modelName];
+          const displayName = modelInfo?.name || modelName;
           const matchModel = modelName.toLowerCase().includes(query);
+          const matchDisplayName = displayName.toLowerCase().includes(query);
           const matchDescription = modelInfo?.description?.toLowerCase().includes(query);
-          if (!matchModel && !matchDescription) return false;
-        }
-
-        // 模态筛选
-        if (selectedModality !== 'all') {
-          const modelInfo = modelInfoMap[modelName];
-          if (modelInfo) {
-            try {
-              const inputModalities = JSON.parse(modelInfo.input_modalities || '[]');
-              const outputModalities = JSON.parse(modelInfo.output_modalities || '[]');
-              if (!inputModalities.includes(selectedModality) && !outputModalities.includes(selectedModality)) {
-                return false;
-              }
-            } catch (e) {
-              return false;
-            }
-          } else {
+          if (!matchModel && !matchDisplayName && !matchDescription) {
             return false;
           }
         }
 
-        // 标签筛选
+        if (selectedModality !== 'all') {
+          const modelInfo = modelInfoMap[modelName];
+          const inputModalities = parseJsonArray(modelInfo?.input_modalities);
+          const outputModalities = parseJsonArray(modelInfo?.output_modalities);
+          if (!inputModalities.includes(selectedModality) && !outputModalities.includes(selectedModality)) {
+            return false;
+          }
+        }
+
         if (selectedTag !== 'all') {
           const modelInfo = modelInfoMap[modelName];
-          if (modelInfo) {
-            try {
-              const tags = JSON.parse(modelInfo.tags || '[]');
-              if (!tags.includes(selectedTag)) return false;
-            } catch (e) {
-              return false;
-            }
-          } else {
+          const tags = parseJsonArray(modelInfo?.tags);
+          if (!tags.includes(selectedTag)) {
             return false;
           }
         }
@@ -212,39 +238,35 @@ export default function ModelPrice() {
         return true;
       })
       .map(([modelName, model]) => {
-        const group = userGroupMap[selectedGroup];
-        const hasAccess = model.groups.includes(selectedGroup);
+        const currentGroup = selectedGroup ? userGroupMap[selectedGroup] : null;
+        const hasAccess = currentGroup ? model.groups.includes(selectedGroup) : false;
         const price = hasAccess
           ? {
-            input: group.ratio * model.price.input,
-            output: group.ratio * model.price.output
-          }
+              input: currentGroup.ratio * model.price.input,
+              output: currentGroup.ratio * model.price.output
+            }
           : { input: t('modelpricePage.noneGroup'), output: t('modelpricePage.noneGroup') };
 
-        // 计算所有用户组的价格 - 只包含模型实际存在的分组
         const allGroupPrices = Object.entries(userGroupMap)
           .filter(([key]) => model.groups.includes(key))
-          .map(([key, grp]) => {
-            return {
-              groupName: grp.name,
-              groupKey: key,
-              input: grp.ratio * model.price.input,
-              output: grp.ratio * model.price.output,
-              type: model.price.type,
-              ratio: grp.ratio,
-              extraRatios:
-                model.price.extra_ratios
-                  ? Object.fromEntries(Object.entries(model.price.extra_ratios).map(([k, v]) => [k, (grp.ratio * v).toFixed(6)]))
-                  : null
-            };
-          });
+          .map(([key, grp]) => ({
+            groupName: grp.name,
+            groupKey: key,
+            input: grp.ratio * model.price.input,
+            output: grp.ratio * model.price.output,
+            type: model.price.type,
+            ratio: grp.ratio,
+            extraRatios: model.price.extra_ratios
+              ? Object.fromEntries(Object.entries(model.price.extra_ratios).map(([ratioKey, value]) => [ratioKey, (grp.ratio * value).toFixed(6)]))
+              : null
+          }));
 
         return {
           model: modelName,
           provider: model.owned_by,
           modelInfo: modelInfoMap[modelName],
           price,
-          group: hasAccess ? group : null,
+          group: hasAccess ? currentGroup : null,
           type: model.price.type,
           priceData: {
             price: model.price,
@@ -253,84 +275,73 @@ export default function ModelPrice() {
         };
       })
       .sort((a, b) => {
-        const ownerA = ownedby?.find((item) => item.name === a.provider);
-        const ownerB = ownedby?.find((item) => item.name === b.provider);
+        const ownerA = ownedby.find((item) => item.name === a.provider);
+        const ownerB = ownedby.find((item) => item.name === b.provider);
         return (ownerA?.id || 0) - (ownerB?.id || 0);
       });
-  }, [availableModels, selectedOwnedBy, onlyShowAvailable, selectedGroup, searchQuery, modelInfoMap, selectedModality, selectedTag, userGroupMap, ownedby, t, unit]);
+  }, [
+    availableModels,
+    selectedOwnedBy,
+    onlyShowAvailable,
+    selectedGroup,
+    searchQuery,
+    modelInfoMap,
+    selectedModality,
+    selectedTag,
+    userGroupMap,
+    ownedby,
+    t,
+    unit
+  ]);
 
-  // 分页处理
   const paginatedModels = useMemo(() => {
     const startIndex = (page - 1) * pageSize;
     return filteredModels.slice(startIndex, startIndex + pageSize);
   }, [filteredModels, page, pageSize]);
 
-  // 重置页码
   useEffect(() => {
     setPage(1);
   }, [selectedOwnedBy, selectedGroup, searchQuery, selectedModality, selectedTag, onlyShowAvailable, pageSize]);
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handlePageSizeChange = (event) => {
-    setPageSize(event.target.value);
-    setPage(1);
-  };
-
-  const handleViewModeChange = (event, newMode) => {
-    if (newMode !== null) {
-      setViewMode(newMode);
+  useEffect(() => {
+    if (!selectedModelDetail?.model) {
+      return;
     }
-  };
 
-  const handleOwnedByChange = (newValue) => {
-    setSelectedOwnedBy(newValue);
-  };
+    const matchedModel = filteredModels.find((item) => item.model === selectedModelDetail.model);
 
-  const handleGroupChange = (groupKey) => {
-    setSelectedGroup(groupKey);
-  };
-
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
-
-  const handleUnitChange = (event, newUnit) => {
-    if (newUnit !== null) {
-      setUnit(newUnit);
+    if (!matchedModel) {
+      setSelectedModelDetail(null);
+      return;
     }
-  };
 
-  const toggleOnlyShowAvailable = () => {
-    setOnlyShowAvailable((prev) => !prev);
-  };
+    if (matchedModel !== selectedModelDetail) {
+      setSelectedModelDetail(matchedModel);
+    }
+  }, [filteredModels, selectedModelDetail]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredModels.length / pageSize));
+  const pageNumbers = getPageNumbers(page, totalPages);
 
   const uniqueOwnedBy = [
     'all',
     ...[...new Set(Object.values(availableModels).map((model) => model.owned_by))].sort((a, b) => {
-      const ownerA = ownedby?.find((item) => item.name === a);
-      const ownerB = ownedby?.find((item) => item.name === b);
+      const ownerA = ownedby.find((item) => item.name === a);
+      const ownerB = ownedby.find((item) => item.name === b);
       return (ownerA?.id || 0) - (ownerB?.id || 0);
     })
   ];
 
   const getIconByName = (name) => {
-    if (name === 'all') return null;
+    if (name === 'all') {
+      return null;
+    }
+
     const owner = ownedby.find((item) => item.name === name);
     return owner?.icon;
   };
 
-  const getTags = (tagsJson) => {
-    if (!tagsJson) return [];
-    try {
-      return JSON.parse(tagsJson);
-    } catch (e) {
-      return [];
-    }
-  };
+  const getTags = (tagsJson) => parseJsonArray(tagsJson);
 
   const clearSearch = () => {
     setSearchQuery('');
@@ -338,957 +349,463 @@ export default function ModelPrice() {
 
   const handleViewDetail = (modelData) => {
     setSelectedModelDetail(modelData);
-    setDetailModalOpen(true);
   };
 
   const handleCloseDetail = () => {
-    setDetailModalOpen(false);
     setSelectedModelDetail(null);
   };
 
   return (
-    <Stack spacing={3} sx={{ padding: theme.spacing(3) }}>
-      <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Fade in timeout={800}>
-            <Typography
-              variant="h2"
-              sx={{
-                fontWeight: 700,
-                background:
-                  theme.palette.mode === 'dark'
-                    ? 'linear-gradient(45deg, #6b9fff 30%, #a29bfe 90%)'
-                    : 'linear-gradient(45deg, #2196F3 30%, #3f51b5 90%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}
-            >
+    <div className="public-scope">
+      <div className="flex flex-col gap-6 px-1 py-2 sm:px-2">
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm">
+              <SlidersHorizontal className="h-4 w-4 text-primary" />
+              {t('modelpricePage.modelPricing')}
+            </div>
+            <h1 className="mt-4 bg-gradient-to-r from-primary via-foreground to-primary bg-clip-text text-3xl font-semibold tracking-tight text-transparent sm:text-4xl">
               {t('modelpricePage.availableModels')}
-            </Typography>
-          </Fade>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-            {t('modelpricePage.modelPricing')}
-          </Typography>
-        </Box>
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">{t('modelpricePage.modelPricing')}</p>
+          </div>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <MuiToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={handleViewModeChange}
-            aria-label="view mode"
-            size="small"
-            sx={{
-              backgroundColor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.6) : theme.palette.background.paper,
-              '& .MuiToggleButton-root': {
-                border: `1px solid ${theme.palette.divider}`,
-                '&.Mui-selected': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.2)
-                  }
-                }
-              }
-            }}
-          >
-            <ToggleButton value="card" aria-label="card view">
-              <Icon icon="eva:grid-outline" width={20} height={20} />
-            </ToggleButton>
-            <ToggleButton value="list" aria-label="list view">
-              <Icon icon="eva:list-outline" width={20} height={20} />
-            </ToggleButton>
-          </MuiToggleButtonGroup>
-        </Box>
-      </Box>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex rounded-full border border-border bg-card p-1 shadow-sm">
+              <button
+                type="button"
+                title={t('modelpricePage.cardView')}
+                onClick={() => setViewMode('card')}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors',
+                  viewMode === 'card' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Grid2x2 className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('modelpricePage.cardView')}</span>
+              </button>
+              <button
+                type="button"
+                title={t('modelpricePage.listView')}
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors',
+                  viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('modelpricePage.listView')}</span>
+              </button>
+            </div>
+          </div>
+        </section>
 
-      <Card
-        elevation={0}
-        sx={{
-          p: 3,
-          overflow: 'visible',
-          backgroundColor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.6) : theme.palette.background.paper,
-          borderRadius: 2
-        }}
-      >
-        {/* 搜索和单位选择 */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 3
-          }}
-        >
-          <Paper
-            sx={{
-              p: '2px 4px',
-              display: 'flex',
-              alignItems: 'center',
-              width: isMobile ? '100%' : 300,
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: theme.palette.mode === 'dark' ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(0,0,0,0.05)',
-              backgroundColor:
-                theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.6) : theme.palette.background.default
-            }}
-          >
-            <IconButton sx={{ p: '8px' }} aria-label="search">
-              <Icon icon="eva:search-fill" width={18} height={18} />
-            </IconButton>
-            <InputBase sx={{ ml: 1, flex: 1 }} placeholder={t('modelpricePage.search')} value={searchQuery} onChange={handleSearchChange} />
-            {searchQuery && (
-              <IconButton sx={{ p: '8px' }} aria-label="clear" onClick={clearSearch}>
-                <Icon icon="eva:close-fill" width={16} height={16} />
-              </IconButton>
-            )}
-          </Paper>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              {t('modelpricePage.unit')}:
-            </Typography>
-            <CustomToggleButtonGroup
-              value={unit}
-              onChange={handleUnitChange}
-              options={unitOptions}
-              aria-label="unit toggle"
-              size="small"
-              sx={{
-                '& .MuiToggleButtonGroup-grouped': {
-                  borderRadius: '6px !important',
-                  mx: 0.5,
-                  border: 0,
-                  boxShadow: theme.palette.mode === 'dark' ? '0 1px 4px rgba(0,0,0,0.2)' : '0 1px 4px rgba(0,0,0,0.05)',
-                  '&.Mui-selected': {
-                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}`
-                  }
-                }
-              }}
-            />
-          </Box>
-        </Box>
-
-        {/* 模型提供商标签 */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mb: 1.5,
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            <Icon icon="eva:globe-outline" width={18} height={18} />
-            {t('modelpricePage.channelType')}
-          </Typography>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1
-            }}
-          >
-            {uniqueOwnedBy.map((ownedBy, index) => {
-              const isSelected = selectedOwnedBy === ownedBy;
-              return (
-                <ButtonBase
-                  key={index}
-                  onClick={() => handleOwnedByChange(ownedBy)}
-                  sx={{
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    transition: 'all 0.2s ease',
-                    transform: isSelected ? 'translateY(-1px)' : 'none',
-                    '&:hover': {
-                      transform: 'translateY(-1px)'
-                    }
-                  }}
+        <section className={cn(surfaceClass, 'p-4 sm:p-5')}>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder={t('modelpricePage.search')}
+                className="h-12 w-full rounded-2xl border border-border bg-background pl-11 pr-12 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.75,
-                      py: 0.75,
-                      px: 1.5,
-                      borderRadius: '6px',
-                      backgroundColor: isSelected
-                        ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                        : theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.background.default, 0.5)
-                          : theme.palette.background.default,
-                      border: `1px solid ${
-                        isSelected ? theme.palette.primary.main : theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : alpha('#000', 0.05)
-                      }`,
-                      boxShadow: isSelected ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}` : 'none'
-                    }}
-                  >
-                    {ownedBy !== 'all' ? (
-                      <Avatar
-                        src={getIconByName(ownedBy)}
-                        alt={ownedBy}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          backgroundColor: theme.palette.mode === 'dark' ? '#fff' : theme.palette.background.paper,
-                          border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                          boxShadow: theme.palette.mode === 'dark' ? '0 2px 6px rgba(0,0,0,0.24)' : '0 2px 6px rgba(15,23,42,0.1)',
-                          '.MuiAvatar-img': {
-                            objectFit: 'contain',
-                            padding: '2px'
-                          }
-                        }}
-                      >
-                        {ownedBy.charAt(0).toUpperCase()}
-                      </Avatar>
-                    ) : (
-                      <Icon
-                        icon="eva:grid-outline"
-                        width={18}
-                        height={18}
-                        color={isSelected ? theme.palette.primary.main : theme.palette.text.secondary}
-                      />
-                    )}
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: isSelected ? 600 : 500,
-                        color: isSelected ? theme.palette.primary.main : theme.palette.text.primary,
-                        fontSize: '0.8125rem'
-                      }}
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+
+            <div className="inline-flex w-fit rounded-full border border-border bg-background p-1">
+              {unitOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setUnit(option.value)}
+                  className={cn(
+                    'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                    unit === option.value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <FilterChip
+              active={onlyShowAvailable}
+              onClick={() => setOnlyShowAvailable((prev) => !prev)}
+              icon={onlyShowAvailable ? <Check className="h-4 w-4" /> : <SlidersHorizontal className="h-4 w-4" />}
+            >
+              {onlyShowAvailable ? t('modelpricePage.onlyAvailable') : t('modelpricePage.showAll')}
+            </FilterChip>
+          </div>
+
+          <div className="mt-5 grid gap-5">
+            <div>
+              <SectionHeading icon={Globe} title={t('modelpricePage.channelType')} />
+              <div className="flex flex-wrap gap-2">
+                {uniqueOwnedBy.map((ownedBy) => {
+                  const active = selectedOwnedBy === ownedBy;
+                  const icon = getIconByName(ownedBy);
+                  return (
+                    <FilterChip
+                      key={ownedBy}
+                      active={active}
+                      onClick={() => setSelectedOwnedBy(ownedBy)}
+                      icon={
+                        ownedBy === 'all' ? (
+                          <Grid2x2 className="h-4 w-4" />
+                        ) : icon ? (
+                          <img src={icon} alt={ownedBy} className="h-4 w-4 object-contain" />
+                        ) : (
+                          <span className="text-xs font-semibold">{ownedBy.charAt(0).toUpperCase()}</span>
+                        )
+                      }
                     >
                       {ownedBy === 'all' ? t('modelpricePage.all') : ownedBy}
-                    </Typography>
-                  </Box>
-                </ButtonBase>
-              );
-            })}
-          </Box>
-        </Box>
+                    </FilterChip>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* 模态类型筛选 */}
-        <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mb: 1.5,
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }}
-          >
-            <Icon icon="eva:layers-outline" width={18} height={18} />
-            {t('modelpricePage.modalityType')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            <ButtonBase
-              onClick={() => setSelectedModality('all')}
-              sx={{
-                borderRadius: '6px',
-                transition: 'all 0.2s ease',
-                transform: selectedModality === 'all' ? 'translateY(-1px)' : 'none',
-                '&:hover': { transform: 'translateY(-1px)' }
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  py: 0.75,
-                  px: 1.5,
-                  borderRadius: '6px',
-                  backgroundColor:
-                    selectedModality === 'all'
-                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                      : theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.background.default, 0.5)
-                        : theme.palette.background.default,
-                  border: `1px solid ${
-                    selectedModality === 'all'
-                      ? theme.palette.primary.main
-                      : theme.palette.mode === 'dark'
-                        ? alpha('#fff', 0.08)
-                        : alpha('#000', 0.05)
-                  }`,
-                  boxShadow: selectedModality === 'all' ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}` : 'none'
-                }}
-              >
-                <Icon
-                  icon="eva:grid-outline"
-                  width={16}
-                  height={16}
-                  color={selectedModality === 'all' ? theme.palette.primary.main : theme.palette.text.secondary}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: selectedModality === 'all' ? 600 : 500,
-                    color: selectedModality === 'all' ? theme.palette.primary.main : theme.palette.text.primary,
-                    fontSize: '0.8125rem'
-                  }}
+            <div>
+              <SectionHeading icon={Layers3} title={t('modelpricePage.modalityType')} />
+              <div className="flex flex-wrap gap-2">
+                <FilterChip
+                  active={selectedModality === 'all'}
+                  onClick={() => setSelectedModality('all')}
+                  icon={<Grid2x2 className="h-4 w-4" />}
                 >
                   {t('modelpricePage.allModality')}
-                </Typography>
-              </Box>
-            </ButtonBase>
-            {Object.entries(MODALITY_OPTIONS).map(([key, option]) => {
-              const isSelected = selectedModality === key;
-              return (
-                <ButtonBase
-                  key={key}
-                  onClick={() => setSelectedModality(key)}
-                  sx={{
-                    borderRadius: '6px',
-                    transition: 'all 0.2s ease',
-                    transform: isSelected ? 'translateY(-1px)' : 'none',
-                    '&:hover': { transform: 'translateY(-1px)' }
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.75,
-                      py: 0.75,
-                      px: 1.5,
-                      borderRadius: '6px',
-                      backgroundColor: isSelected
-                        ? alpha(theme.palette[option.color]?.main || theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                        : theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.background.default, 0.5)
-                          : theme.palette.background.default,
-                      border: `1px solid ${
-                        isSelected
-                          ? theme.palette[option.color]?.main || theme.palette.primary.main
-                          : theme.palette.mode === 'dark'
-                            ? alpha('#fff', 0.08)
-                            : alpha('#000', 0.05)
-                      }`,
-                      boxShadow: isSelected
-                        ? `0 2px 8px ${alpha(theme.palette[option.color]?.main || theme.palette.primary.main, 0.2)}`
-                        : 'none'
-                    }}
+                </FilterChip>
+                {Object.entries(MODALITY_OPTIONS).map(([key, option]) => (
+                  <FilterChip
+                    key={key}
+                    active={selectedModality === key}
+                    onClick={() => setSelectedModality(key)}
+                    tone={option.color}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: isSelected ? 600 : 500,
-                        color: isSelected ? theme.palette[option.color]?.main || theme.palette.primary.main : theme.palette.text.primary,
-                        fontSize: '0.8125rem'
-                      }}
-                    >
-                      {option.text}
-                    </Typography>
-                  </Box>
-                </ButtonBase>
-              );
-            })}
-          </Box>
-        </Box>
+                    {option.text}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
 
-        {/* 标签筛选 */}
-        {allTags.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{
-                mb: 1.5,
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
-              <Icon icon="eva:pricetags-outline" width={18} height={18} />
-              {t('modelpricePage.tags')}
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              <ButtonBase
-                onClick={() => setSelectedTag('all')}
-                sx={{
-                  borderRadius: '6px',
-                  transition: 'all 0.2s ease',
-                  transform: selectedTag === 'all' ? 'translateY(-1px)' : 'none',
-                  '&:hover': { transform: 'translateY(-1px)' }
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.75,
-                    py: 0.75,
-                    px: 1.5,
-                    borderRadius: '6px',
-                    backgroundColor:
-                      selectedTag === 'all'
-                        ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                        : theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.background.default, 0.5)
-                          : theme.palette.background.default,
-                    border: `1px solid ${
-                      selectedTag === 'all'
-                        ? theme.palette.primary.main
-                        : theme.palette.mode === 'dark'
-                          ? alpha('#fff', 0.08)
-                          : alpha('#000', 0.05)
-                    }`,
-                    boxShadow: selectedTag === 'all' ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}` : 'none'
-                  }}
-                >
-                  <Icon
-                    icon="eva:grid-outline"
-                    width={16}
-                    height={16}
-                    color={selectedTag === 'all' ? theme.palette.primary.main : theme.palette.text.secondary}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: selectedTag === 'all' ? 600 : 500,
-                      color: selectedTag === 'all' ? theme.palette.primary.main : theme.palette.text.primary,
-                      fontSize: '0.8125rem'
-                    }}
+            {allTags.length > 0 ? (
+              <div>
+                <SectionHeading icon={Tags} title={t('modelpricePage.tags')} />
+                <div className="flex flex-wrap gap-2">
+                  <FilterChip
+                    active={selectedTag === 'all'}
+                    onClick={() => setSelectedTag('all')}
+                    icon={<Grid2x2 className="h-4 w-4" />}
                   >
                     {t('modelpricePage.allTags')}
-                  </Typography>
-                </Box>
-              </ButtonBase>
-              {allTags.map((tag) => {
-                const isSelected = selectedTag === tag;
-                return (
-                  <ButtonBase
-                    key={tag}
-                    onClick={() => setSelectedTag(tag)}
-                    sx={{
-                      borderRadius: '6px',
-                      transition: 'all 0.2s ease',
-                      transform: isSelected ? 'translateY(-1px)' : 'none',
-                      '&:hover': { transform: 'translateY(-1px)' }
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.75,
-                        py: 0.75,
-                        px: 1.5,
-                        borderRadius: '6px',
-                        backgroundColor: isSelected
-                          ? alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                          : theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.default, 0.5)
-                            : theme.palette.background.default,
-                        border: `1px solid ${
-                          isSelected ? theme.palette.info.main : theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : alpha('#000', 0.05)
-                        }`,
-                        boxShadow: isSelected ? `0 2px 8px ${alpha(theme.palette.info.main, 0.2)}` : 'none'
-                      }}
+                  </FilterChip>
+                  {allTags.map((tag) => (
+                    <FilterChip
+                      key={tag}
+                      active={selectedTag === tag}
+                      onClick={() => setSelectedTag(tag)}
+                      tone={tag.toLowerCase() === 'hot' ? 'error' : 'info'}
                     >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isSelected ? 600 : 500,
-                          color: isSelected ? theme.palette.info.main : theme.palette.text.primary,
-                          fontSize: '0.8125rem'
-                        }}
-                      >
-                        {tag}
-                      </Typography>
-                    </Box>
-                  </ButtonBase>
-                );
-              })}
-            </Box>
-          </Box>
-        )}
+                      {tag}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
-        {/* 用户组标签 */}
-        <Box sx={{ mb: 0 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 1.5
-            }}
-          >
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
+            <div>
+              <SectionHeading icon={Users} title={t('modelpricePage.group')} />
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(userGroupMap).map(([key, group]) => {
+                  const active = selectedGroup === key;
+                  const ratioTone = group.ratio > 1 ? 'warning' : group.ratio > 0 ? 'info' : 'success';
+                  return (
+                    <FilterChip
+                      key={key}
+                      active={active}
+                      onClick={() => setSelectedGroup(key)}
+                      icon={active ? <Check className="h-4 w-4" /> : null}
+                    >
+                      <span>{group.name}</span>
+                      <span
+                        className={cn(
+                          'inline-flex min-w-8 items-center justify-center rounded-full border px-2 py-0.5 text-[11px] font-semibold',
+                          filterToneMap[ratioTone]
+                        )}
+                      >
+                        {group.ratio > 0 ? `x${group.ratio}` : t('modelpricePage.free')}
+                      </span>
+                    </FilterChip>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            {t('modelpricePage.totalModels', { count: filteredModels.length })}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-muted-foreground" htmlFor="price-page-size">
+              {t('modelpricePage.pageSize')}
+            </label>
+            <select
+              id="price-page-size"
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="h-10 rounded-full border border-border bg-card px-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
             >
-              <Icon icon="eva:people-outline" width={18} height={18} />
-              {t('modelpricePage.group')}
-            </Typography>
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
 
-            <Tooltip title={onlyShowAvailable ? t('modelpricePage.showAll') : t('modelpricePage.onlyAvailable')} arrow>
-              <ButtonBase
-                onClick={toggleOnlyShowAvailable}
-                sx={{
-                  position: 'relative',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                  '&:hover': {
-                    transform: 'translateY(-1px)',
-                    boxShadow: theme.palette.mode === 'dark' ? '0 3px 10px rgba(0,0,0,0.4)' : '0 3px 10px rgba(0,0,0,0.1)'
-                  },
-                  '&:active': {
-                    transform: 'translateY(0px)'
-                  }
-                }}
-              >
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    py: 0.6,
-                    px: 1.5,
-                    background: onlyShowAvailable
-                      ? theme.palette.mode === 'dark'
-                        ? `linear-gradient(45deg, ${alpha(theme.palette.primary.main, 0.8)}, ${alpha(theme.palette.primary.dark, 0.9)})`
-                        : `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
-                      : theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.background.paper, 0.6)
-                        : alpha(theme.palette.background.paper, 1),
-                    border: `1px solid ${
-                      onlyShowAvailable
-                        ? theme.palette.primary.main
-                        : theme.palette.mode === 'dark'
-                          ? alpha('#fff', 0.1)
-                          : alpha('#000', 0.08)
-                    }`,
-                    borderRadius: '20px',
-                    boxShadow: onlyShowAvailable
-                      ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.4)}`
-                      : theme.palette.mode === 'dark'
-                        ? '0 2px 6px rgba(0,0,0,0.2)'
-                        : '0 2px 6px rgba(0,0,0,0.05)'
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: onlyShowAvailable
-                        ? '#fff'
-                        : theme.palette.mode === 'dark'
-                          ? alpha(theme.palette.primary.main, 0.2)
-                          : alpha(theme.palette.primary.main, 0.1),
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <Icon
-                      icon={onlyShowAvailable ? 'eva:checkmark-outline' : 'eva:funnel-outline'}
-                      width={14}
-                      height={14}
-                      color={onlyShowAvailable ? theme.palette.primary.main : theme.palette.text.secondary}
-                    />
-                  </Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      color: onlyShowAvailable ? '#fff' : theme.palette.text.primary,
-                      fontSize: '0.75rem',
-                      letterSpacing: '0.01em',
-                      textTransform: 'uppercase'
-                    }}
-                  >
-                    {t('modelpricePage.onlyAvailable')}
-                  </Typography>
-                </Box>
-              </ButtonBase>
-            </Tooltip>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 1
-            }}
-          >
-            {Object.entries(userGroupMap).map(([key, group]) => {
-              const isSelected = selectedGroup === key;
-              return (
-                <Tooltip
-                  key={key}
-                  title={group.ratio > 0 ? `${t('modelpricePage.rate')}: x${group.ratio}` : t('modelpricePage.free')}
-                  arrow
-                >
-                  <ButtonBase
-                    onClick={() => handleGroupChange(key)}
-                    sx={{
-                      position: 'relative',
-                      borderRadius: '6px',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s ease',
-                      transform: isSelected ? 'translateY(-1px)' : 'none',
-                      '&:hover': {
-                        transform: 'translateY(-1px)'
-                      }
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        py: 0.75,
-                        px: 1.5,
-                        borderRadius: '6px',
-                        backgroundColor: isSelected
-                          ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.25 : 0.1)
-                          : theme.palette.mode === 'dark'
-                            ? alpha(theme.palette.background.default, 0.5)
-                            : theme.palette.background.default,
-                        border: `1px solid ${
-                          isSelected
-                            ? theme.palette.primary.main
-                            : theme.palette.mode === 'dark'
-                              ? alpha('#fff', 0.08)
-                              : alpha('#000', 0.05)
-                        }`,
-                        boxShadow: isSelected ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}` : 'none'
-                      }}
-                    >
-                      <Icon
-                        icon={isSelected ? 'eva:checkmark-circle-2-fill' : 'eva:radio-button-off-outline'}
-                        width={16}
-                        height={16}
-                        color={isSelected ? theme.palette.primary.main : theme.palette.text.secondary}
-                      />
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: isSelected ? 600 : 500,
-                          color: isSelected ? theme.palette.primary.main : theme.palette.text.primary,
-                          fontSize: '0.8125rem'
-                        }}
-                      >
-                        {group.name}
-                      </Typography>
-                      {group.ratio > 0 ? (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: 24,
-                            height: 16,
-                            borderRadius: '4px',
-                            backgroundColor:
-                              group.ratio > 1
-                                ? alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.3 : 0.2)
-                                : alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.3 : 0.2),
-                            color: group.ratio > 1 ? theme.palette.warning.main : theme.palette.info.main,
-                            fontSize: '0.6875rem',
-                            fontWeight: 600,
-                            px: 0.5
-                          }}
-                        >
-                          x{group.ratio}
-                        </Box>
-                      ) : (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: 24,
-                            height: 16,
-                            borderRadius: '4px',
-                            backgroundColor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.2),
-                            color: theme.palette.success.main,
-                            fontSize: '0.6875rem',
-                            fontWeight: 600,
-                            px: 0.5
-                          }}
-                        >
-                          {t('modelpricePage.free')}
-                        </Box>
-                      )}
-                    </Box>
-                  </ButtonBase>
-                </Tooltip>
-              );
-            })}
-          </Box>
-        </Box>
-      </Card>
-
-      {/* 模型卡片网格 */}
-      <Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('modelpricePage.totalModels', { count: filteredModels.length })}
-        </Typography>
         {filteredModels.length > 0 ? (
           <>
             {viewMode === 'card' ? (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: 'repeat(1, minmax(0, 1fr))',
-                    sm: 'repeat(2, minmax(0, 1fr))',
-                    md: 'repeat(3, minmax(0, 1fr))',
-                    lg: 'repeat(3, minmax(0, 1fr))'
-                  },
-                  gap: 2
+              <section
+                className="grid gap-4"
+                style={{
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))'
                 }}
               >
                 {paginatedModels.map((model) => (
-                  <Box key={model.model}>
-                    <ModelCard
-                      model={model.model}
-                      provider={model.provider}
-                      modelInfo={model.modelInfo}
-                      price={model.price}
-                      group={model.group}
-                      ownedbyIcon={getIconByName(model.provider)}
-                      unit={unit}
-                      type={model.type}
-                      formatPrice={formatPrice}
-                      onViewDetail={() => handleViewDetail(model)}
-                    />
-                  </Box>
+                  <ModelCard
+                    key={model.model}
+                    model={model.model}
+                    provider={model.provider}
+                    modelInfo={model.modelInfo}
+                    price={model.price}
+                    group={model.group}
+                    ownedbyIcon={getIconByName(model.provider)}
+                    unit={unit}
+                    type={model.type}
+                    formatPrice={formatPrice}
+                    onViewDetail={() => handleViewDetail(model)}
+                  />
                 ))}
-              </Box>
+              </section>
             ) : (
-              <TableContainer component={Paper} sx={{ boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('modelpricePage.modelName')}</TableCell>
-                      <TableCell align="center">{t('modelpricePage.type')}</TableCell>
-                      <TableCell align="center">{t('modelpricePage.provider')}</TableCell>
-                      <TableCell align="left">{t('modelpricePage.inputPrice')}</TableCell>
-                      <TableCell align="left">{t('modelpricePage.outputPrice')}</TableCell>
-                      <TableCell align="center">{t('common.action')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {paginatedModels.map((model) => (
-                      <TableRow key={model.model} hover>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Typography variant="body2" fontWeight="bold" sx={{ fontSize: '1rem' }}>
-                                {model.model}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  copy(model.model, t('modelpricePage.modelName'));
-                                }}
-                                sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}
-                              >
-                                <Icon icon="eva:copy-outline" width={16} height={16} />
-                              </IconButton>
-                              {getTags(model.modelInfo?.tags).some((t) => t.toLowerCase() === 'hot') && (
-                                <Label variant="soft" color="error" startIcon={<Icon icon="mdi:fire" />} sx={{ ml: 0.5 }}>
-                                  HOT
-                                </Label>
-                              )}
-                            </Box>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                              {getTags(model.modelInfo?.tags).map(
-                                (tag) =>
-                                  tag.toLowerCase() !== 'hot' && (
-                                    <Label key={tag} variant="soft" color="default">
+              <section className={cn(surfaceClass, 'overflow-hidden')}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse">
+                    <thead className="bg-background/70">
+                      <tr className="border-b border-border text-left">
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('modelpricePage.modelName')}</th>
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('modelpricePage.type')}</th>
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('modelpricePage.provider')}</th>
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('modelpricePage.inputPrice')}</th>
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('modelpricePage.outputPrice')}</th>
+                        <th className="px-4 py-4 text-sm font-semibold text-foreground">{t('common.action')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedModels.map((model) => (
+                        <tr key={model.model} className="border-b border-border/70 bg-card/80 align-top last:border-b-0">
+                          <td className="px-4 py-4">
+                            <div className="flex min-w-[240px] flex-col gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground">{model.modelInfo?.name || model.model}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => copy(model.model, t('modelpricePage.modelName'))}
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                >
+                                  <Copy className="h-3.5 w-3.5" />
+                                </button>
+                                {getTags(model.modelInfo?.tags).some((tag) => tag.toLowerCase() === 'hot') ? (
+                                  <span className="inline-flex items-center rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
+                                    HOT
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {getTags(model.modelInfo?.tags)
+                                  .filter((tag) => tag.toLowerCase() !== 'hot')
+                                  .map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground"
+                                    >
                                       {tag}
-                                    </Label>
-                                  )
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <span
+                              className={cn(
+                                'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                                model.type === 'times'
+                                  ? 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                  : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                               )}
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box
-                            sx={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 1,
-                              backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                              color: theme.palette.primary.main,
-                              fontSize: '0.75rem',
-                              fontWeight: 600
-                            }}
-                          >
-                            {model.type === 'tokens' ? t('modelpricePage.tokens') : t('modelpricePage.times')}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                            <Avatar
-                              src={getIconByName(model.provider)}
-                              alt={model.provider}
-                              sx={{
-                                width: 24,
-                                height: 24,
-                                backgroundColor: '#fff',
-                                border: `1px solid ${alpha(theme.palette.divider, 0.75)}`,
-                                boxShadow: theme.palette.mode === 'dark' ? '0 2px 6px rgba(0,0,0,0.24)' : '0 2px 6px rgba(15,23,42,0.1)',
-                                '& .MuiAvatar-img': {
-                                  objectFit: 'contain',
-                                  padding: '2px'
-                                }
-                              }}
-                            />
-                            <Typography variant="body2">{model.provider}</Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="left">
-                          <Stack spacing={0.5}>
-                            {model.priceData.allGroupPrices.map((groupPrice) => (
-                              <Box key={groupPrice.groupKey} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 40 }}>
-                                  {groupPrice.groupName}:
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color='success.main'
-                                  fontWeight="bold"
-                                >
-                                  {groupPrice.input > 0
-                                    ? formatPrice(groupPrice.input, model.type === 'tokens' ? 'tokens' : 'times')
-                                    : t('modelpricePage.free')}
-                                </Typography>
-                                {groupPrice.input > 0 && (
-                                  <Typography variant="caption" color="success.main">
-                                    (x{groupPrice.ratio})
-                                  </Typography>
+                            >
+                              {model.type === 'tokens' ? t('modelpricePage.tokens') : t('modelpricePage.times')}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <div className="flex min-w-[140px] items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-border bg-background shadow-sm">
+                                {getIconByName(model.provider) ? (
+                                  <img src={getIconByName(model.provider)} alt={model.provider} className="h-5 w-5 object-contain" />
+                                ) : (
+                                  <span className="text-xs font-semibold text-foreground">{model.provider?.charAt(0)?.toUpperCase()}</span>
                                 )}
-                              </Box>
-                            ))}
-                          </Stack>
-                        </TableCell>
-                        <TableCell align="left">
-                          <Stack spacing={0.5}>
-                            {model.priceData.allGroupPrices.map((groupPrice) => (
-                              <Box key={groupPrice.groupKey} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 40 }}>
-                                  {groupPrice.groupName}:
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  color= 'success.main'
-                                  fontWeight="bold"
-                                >
-                                  {groupPrice.output > 0
-                                    ? formatPrice(groupPrice.output, model.type === 'tokens' ? 'tokens' : 'times')
-                                    : t('modelpricePage.free')}
-                                </Typography>
-                                {groupPrice.output > 0 && (
-                                  <Typography variant="caption" color="success.main">
-                                    (x{groupPrice.ratio})
-                                  </Typography>
-                                )}
-                              </Box>
-                            ))}
-                          </Stack>
-                        </TableCell>
-                        <TableCell align="center">
-                          <IconButton onClick={() => handleViewDetail(model)} size="small">
-                            <Icon icon="eva:eye-outline" width={20} height={20} />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                              </div>
+                              <span className="text-sm text-foreground">{model.provider}</span>
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <div className="min-w-[180px] space-y-2">
+                              {model.priceData.allGroupPrices.map((groupPrice) => (
+                                <div key={groupPrice.groupKey} className="flex items-center gap-2 text-sm">
+                                  <span className="min-w-[44px] text-xs text-muted-foreground">{groupPrice.groupName}</span>
+                                  <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                                    {groupPrice.input > 0 ? formatPrice(groupPrice.input, model.type === 'tokens' ? 'tokens' : 'times') : t('modelpricePage.free')}
+                                  </span>
+                                  {groupPrice.input > 0 ? <span className="text-xs text-muted-foreground">(x{groupPrice.ratio})</span> : null}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <div className="min-w-[180px] space-y-2">
+                              {model.priceData.allGroupPrices.map((groupPrice) => (
+                                <div key={groupPrice.groupKey} className="flex items-center gap-2 text-sm">
+                                  <span className="min-w-[44px] text-xs text-muted-foreground">{groupPrice.groupName}</span>
+                                  <span className="font-semibold text-amber-700 dark:text-amber-300">
+                                    {groupPrice.output > 0 ? formatPrice(groupPrice.output, model.type === 'tokens' ? 'tokens' : 'times') : t('modelpricePage.free')}
+                                  </span>
+                                  {groupPrice.output > 0 ? <span className="text-xs text-muted-foreground">(x{groupPrice.ratio})</span> : null}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+
+                          <td className="px-4 py-4">
+                            <button
+                              type="button"
+                              onClick={() => handleViewDetail(model)}
+                              className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                            >
+                              <Eye className="h-4 w-4" />
+                              {t('modelpricePage.viewDetail')}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4, gap: 2, flexWrap: 'wrap' }}>
-              <Pagination
-                count={Math.ceil(filteredModels.length / pageSize)}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                size={isMobile ? 'small' : 'medium'}
-              />
-              <FormControl size="small" sx={{ minWidth: 120 }}>
-                <Select
-                  value={pageSize}
-                  onChange={handlePageSizeChange}
-                  displayEmpty
-                  inputProps={{ 'aria-label': 'Without label' }}
-                  sx={{
-                    borderRadius: '8px',
-                    '& .MuiSelect-select': {
-                      py: 1
-                    }
+            <section className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-muted-foreground">
+                {page} / {totalPages}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => {
+                    setPage((current) => Math.max(1, current - 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {pageSizeOptions.map((size) => (
-                    <MenuItem key={size} value={size}>
-                      {size} / Page
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+                  <ChevronLeft className="h-4 w-4" />
+                  {t('modelpricePage.previous')}
+                </button>
+
+                {pageNumbers.map((item) =>
+                  String(item).startsWith('ellipsis') ? (
+                    <span key={item} className="px-2 text-sm text-muted-foreground">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => {
+                        setPage(item);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={cn(
+                        'inline-flex h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors',
+                        page === item
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-card text-foreground hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => {
+                    setPage((current) => Math.min(totalPages, current + 1));
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t('modelpricePage.next')}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </section>
           </>
         ) : (
-          <Card
-            sx={{
-              p: 8,
-              textAlign: 'center',
-              backgroundColor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.6) : theme.palette.background.paper
-            }}
-          >
-            <Stack spacing={2} alignItems="center">
-              <Icon icon="eva:search-outline" width={64} height={64} color={theme.palette.text.secondary} />
-              <Typography variant="h5" color="text.secondary">
-                {t('modelpricePage.noModelsFound')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('modelpricePage.noModelsFoundTip')}
-              </Typography>
-            </Stack>
-          </Card>
+          <section className={cn(surfaceClass, 'p-10 text-center sm:p-14')}>
+            <div className="mx-auto flex max-w-md flex-col items-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[22px] border border-border bg-background text-muted-foreground">
+                <Search className="h-7 w-7" />
+              </div>
+              <h3 className="mt-5 text-xl font-semibold text-foreground">{t('modelpricePage.noModelsFound')}</h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('modelpricePage.noModelsFoundTip')}</p>
+            </div>
+          </section>
         )}
-      </Box>
 
-      {/* 模型详情对话框 */}
-      <ModelDetailModal
-        open={detailModalOpen}
-        onClose={handleCloseDetail}
-        model={selectedModelDetail?.model}
-        provider={selectedModelDetail?.provider}
-        modelInfo={selectedModelDetail?.modelInfo}
-        priceData={selectedModelDetail?.priceData}
-        ownedbyIcon={selectedModelDetail ? getIconByName(selectedModelDetail.provider) : null}
-        userGroupMap={userGroupMap}
-        formatPrice={formatPrice}
-        unit={unit}
-      />
-    </Stack>
+        <ModelDetailPanel
+          open={Boolean(selectedModelDetail)}
+          model={selectedModelDetail?.model}
+          provider={selectedModelDetail?.provider}
+          modelInfo={selectedModelDetail?.modelInfo}
+          priceData={selectedModelDetail?.priceData}
+          ownedbyIcon={selectedModelDetail ? getIconByName(selectedModelDetail.provider) : null}
+          formatPrice={formatPrice}
+          onClose={handleCloseDetail}
+        />
+
+      </div>
+    </div>
   );
 }

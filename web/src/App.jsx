@@ -55,6 +55,11 @@ const App = () => {
     };
   }, [dispatch]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', customization.theme === 'dark');
+  }, [customization.theme]);
+
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={themes(customization)}>

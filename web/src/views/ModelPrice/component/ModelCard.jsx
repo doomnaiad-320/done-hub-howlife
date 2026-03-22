@@ -1,43 +1,60 @@
 import PropTypes from 'prop-types';
-import { Card, Typography, Box, Avatar, Stack, IconButton, Tooltip } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
-import { Icon } from '@iconify/react';
-import Label from 'ui-component/Label';
-import { MODALITY_OPTIONS } from 'constants/Modality';
+import { Copy } from 'lucide-react';
 import { copy } from 'utils/common';
 import { useTranslation } from 'react-i18next';
+import { MODALITY_OPTIONS } from 'constants/Modality';
+import { cn } from 'components/public/utils';
 import { inferApiEndpoints, parseJsonArray } from './modelEndpointUtils';
 
+const endpointToneMap = {
+  primary: 'bg-muted text-foreground',
+  info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+  warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+};
+
+const modalityToneMap = {
+  primary: 'bg-muted text-foreground',
+  secondary: 'bg-violet-500/10 text-violet-700 dark:text-violet-300',
+  info: 'bg-sky-500/10 text-sky-700 dark:text-sky-300',
+  success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+  warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+  error: 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
+};
+
+const getProtocolLabel = (protocol) => {
+  switch (protocol) {
+    case 'openai':
+      return 'OpenAI';
+    case 'gemini':
+      return 'Gemini';
+    case 'claude':
+      return 'Claude';
+    default:
+      return protocol;
+  }
+};
+
 export default function ModelCard({ model, provider, modelInfo, price, group, ownedbyIcon, type, formatPrice, onViewDetail }) {
-  const theme = useTheme();
   const { t } = useTranslation();
 
   const inputModalities = modelInfo ? parseJsonArray(modelInfo.input_modalities) : [];
   const outputModalities = modelInfo ? parseJsonArray(modelInfo.output_modalities) : [];
   const tags = modelInfo ? parseJsonArray(modelInfo.tags) : [];
-  const isTimesBilling = type === 'times';
   const displayName = modelInfo?.name || model;
-  const billingStatusText = isTimesBilling ? '按次计费' : '按量计费';
   const apiEndpoints = inferApiEndpoints({
     model,
     provider,
     inputModalities,
     outputModalities
   });
+
   const endpointTypes = Array.from(
     new Map(
       apiEndpoints.map((endpoint) => [
         endpoint.protocol,
         {
           key: endpoint.protocol,
-          label:
-            endpoint.protocol === 'openai'
-              ? 'OpenAI'
-              : endpoint.protocol === 'gemini'
-                ? 'Gemini'
-                : endpoint.protocol === 'claude'
-                  ? 'Claude'
-                  : endpoint.protocol,
+          label: getProtocolLabel(endpoint.protocol),
           color: endpoint.color
         }
       ])
@@ -58,211 +75,108 @@ export default function ModelCard({ model, provider, modelInfo, price, group, ow
     ...tags.slice(0, 2).map((tag) => ({
       key: `tag-${tag}`,
       label: tag,
-      color: tag === 'Hot' ? 'error' : 'default'
+      color: tag.toLowerCase() === 'hot' ? 'error' : 'primary'
     }))
-  ].slice(0, 4);
+  ].slice(0, 3);
+
+  const billingTone =
+    type === 'times'
+      ? 'bg-amber-500/12 text-amber-700 dark:text-amber-300'
+      : 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300';
+
+  const priceValueClass =
+    type === 'times' ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300';
+
+  const priceRowClass = type === 'times' ? 'bg-amber-500/8' : 'bg-emerald-500/8';
 
   return (
-    <Card
+    <button
+      type="button"
       onClick={onViewDetail}
-      sx={{
-        height: '100%',
-        p: 1.1,
-        borderRadius: '16px',
-        border: 'none',
-        boxShadow: 'none',
-        cursor: 'pointer',
-        transition: 'box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease',
-        backgroundColor:
-          theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.72) : alpha(theme.palette.background.paper, 0.98),
-        '&:hover': {
-          boxShadow: theme.palette.mode === 'dark' ? '0 12px 24px rgba(0,0,0,0.26)' : '0 10px 24px rgba(15,23,42,0.08)',
-          transform: 'translateY(-2px)'
-        }
-      }}
+      className="flex h-full w-full flex-col rounded-[24px] border border-border/70 bg-card p-3.5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
     >
-      <Stack direction="row" justifyContent="space-between" spacing={1}>
-        <Stack direction="row" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
-          <Avatar
-            src={ownedbyIcon}
-            alt={provider}
-            sx={{
-              width: 36,
-              height: 36,
-              bgcolor: theme.palette.background.paper,
-              border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-              boxShadow: theme.palette.mode === 'dark' ? '0 4px 10px rgba(0,0,0,0.28)' : '0 4px 10px rgba(15,23,42,0.12)',
-              '.MuiAvatar-img': {
-                objectFit: 'contain',
-                p: '4px'
-              }
-            }}
-          >
-            {provider?.charAt(0).toUpperCase()}
-          </Avatar>
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-muted shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+          {ownedbyIcon ? (
+            <img src={ownedbyIcon} alt={provider} className="h-6 w-6 object-contain" />
+          ) : (
+            <span className="text-sm font-semibold text-foreground">{provider?.charAt(0)?.toUpperCase()}</span>
+          )}
+        </div>
 
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" alignItems="center">
-              <Tooltip title={displayName}>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 700,
-                    lineHeight: 1.15,
-                    fontSize: '0.98rem',
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    wordBreak: 'break-word',
-                    minHeight: '2.25em'
-                  }}
-                >
-                  {displayName}
-                </Typography>
-              </Tooltip>
-            </Stack>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-[15px] font-semibold leading-5 text-foreground">{displayName}</p>
+              <p className="mt-1 truncate text-[11px] text-muted-foreground">{model}</p>
+            </div>
 
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center" sx={{ mt: 0.3 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                {t('modelpricePage.input')}{' '}
-                <span style={{ color: theme.palette.warning.main, fontWeight: 700, fontSize: '0.82rem' }}>
-                  {formatPrice(price.input, type)}
-                </span>
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                {t('modelpricePage.output')}{' '}
-                <span style={{ color: theme.palette.warning.main, fontWeight: 700, fontSize: '0.82rem' }}>
-                  {formatPrice(price.output, type)}
-                </span>
-              </Typography>
-            </Stack>
-          </Box>
-        </Stack>
-
-        <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
-          <Tooltip title={t('modelpricePage.copyModelId')}>
-            <IconButton
-              size="small"
+            <button
+              type="button"
               onClick={(event) => {
                 event.stopPropagation();
                 copy(model, t('modelpricePage.modelId'));
               }}
-              sx={{
-                width: 28,
-                height: 28,
-                border: `1px solid ${theme.palette.mode === 'dark' ? alpha('#fff', 0.12) : alpha('#64748b', 0.22)}`,
-                color: theme.palette.text.secondary
-              }}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              <Icon icon="eva:copy-outline" width={15} height={15} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Stack>
+              <Copy className="h-3.5 w-3.5" />
+              <span className="sr-only">{t('modelpricePage.copyModelId')}</span>
+            </button>
+          </div>
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{
-          mt: 0.8,
-          fontSize: '0.7rem',
-          lineHeight: 1.3,
-          display: '-webkit-box',
-          WebkitLineClamp: 1,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          minHeight: '1.3em'
-        }}
-      >
-        {modelInfo?.description || model}
-      </Typography>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {provider}
+            </span>
+            {endpointTypes.slice(0, 2).map((endpoint) => (
+              <span
+                key={endpoint.key}
+                className={cn(
+                  'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+                  endpointToneMap[endpoint.color] || endpointToneMap.primary
+                )}
+              >
+                {endpoint.label}
+              </span>
+            ))}
+            <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold', billingTone)}>
+              {type === 'times' ? t('modelpricePage.times') : t('modelpricePage.tokens')}
+            </span>
+          </div>
+        </div>
+      </div>
 
-      {endpointTypes.length > 0 && (
-        <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.85 }}>
-          {endpointTypes.map((endpoint) => (
-            <Label
-              key={endpoint.key}
-              variant="soft"
-              color={endpoint.color}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.45,
-                fontSize: '0.68rem',
-                py: 0.15,
-                px: 0.8,
-                borderRadius: '999px'
-              }}
-            >
-              <Icon icon="eva:link-2-outline" width={11} height={11} />
-              {endpoint.label}
-            </Label>
-          ))}
-        </Stack>
-      )}
+      <div className={cn('mt-3 grid gap-2 rounded-[18px] px-3 py-2.5 sm:grid-cols-2', priceRowClass)}>
+        <div className="min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{t('modelpricePage.input')}</div>
+          <div className={cn('mt-1 truncate text-sm font-semibold', priceValueClass)}>{formatPrice(price.input, type)}</div>
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{t('modelpricePage.output')}</div>
+          <div className={cn('mt-1 truncate text-sm font-semibold', priceValueClass)}>{formatPrice(price.output, type)}</div>
+        </div>
+      </div>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={0.8} sx={{ mt: 0.95 }}>
-        <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ minWidth: 0, flex: 1 }}>
-          {metaTags.map((item) => (
-            <Label
-              key={item.key}
-              variant="soft"
-              color={item.color}
-              sx={{
-                fontSize: '0.68rem',
-                py: 0.15,
-                px: 0.7,
-                borderRadius: '999px'
-              }}
-            >
-              {item.label}
-            </Label>
-          ))}
+      <div className="mt-2.5 flex flex-1 flex-wrap content-start gap-1.5">
+        {metaTags.map((item) => (
+          <span
+            key={item.key}
+            className={cn(
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+              modalityToneMap[item.color] || modalityToneMap.primary
+            )}
+          >
+            {item.label}
+          </span>
+        ))}
 
-          {group?.ratio > 1 && (
-            <Label
-              variant="soft"
-              color={group.ratio > 1 ? 'warning' : 'info'}
-              sx={{
-                fontSize: '0.68rem',
-                py: 0.15,
-                px: 0.7,
-                borderRadius: '999px'
-              }}
-            >
-              x{group.ratio}
-            </Label>
-          )}
-        </Stack>
-
-        <Box
-          sx={{
-            flexShrink: 0,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.45,
-            px: 0.85,
-            py: 0.4,
-            borderRadius: '999px',
-            bgcolor: alpha(theme.palette.success.main, 0.12),
-            color: theme.palette.text.secondary,
-            fontSize: '0.7rem',
-            fontWeight: 700
-          }}
-        >
-          <Box
-            sx={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              bgcolor: theme.palette.success.main
-            }}
-          />
-          {billingStatusText}
-        </Box>
-      </Stack>
-    </Card>
+        {group?.ratio > 1 ? (
+          <span className="inline-flex items-center rounded-full bg-amber-500/12 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+            x{group.ratio}
+          </span>
+        ) : null}
+      </div>
+    </button>
   );
 }
 

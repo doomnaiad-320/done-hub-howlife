@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--public-radius) - 4px);
+  --radius-md: calc(var(--public-radius) - 2px);
+  --radius-lg: var(--public-radius);
+  --radius-xl: calc(var(--public-radius) + 4px);
+  --color-background: var(--public-background);
+  --color-foreground: var(--public-foreground);
+  --color-card: var(--public-card);
+  --color-card-foreground: var(--public-card-foreground);
+  --color-popover: var(--public-popover);
+  --color-popover-foreground: var(--public-popover-foreground);
+  --color-primary: var(--public-primary);
+  --color-primary-foreground: var(--public-primary-foreground);
+  --color-secondary: var(--public-secondary);
+  --color-secondary-foreground: var(--public-secondary-foreground);
+  --color-muted: var(--public-muted);
+  --color-muted-foreground: var(--public-muted-foreground);
+  --color-accent: var(--public-accent);
+  --color-accent-foreground: var(--public-accent-foreground);
+  --color-destructive: var(--public-destructive);
+  --color-destructive-foreground: var(--public-destructive-foreground);
+  --color-border: var(--public-border);
+  --color-input: var(--public-input);
+  --color-ring: var(--public-ring);
+}
+
+.public-theme,
+.public-scope {
+  --public-radius: 1rem;
+  --public-background: oklch(1 0 0);
+  --public-foreground: oklch(0.145 0 0);
+  --public-card: oklch(1 0 0);
+  --public-card-foreground: oklch(0.145 0 0);
+  --public-popover: oklch(1 0 0);
+  --public-popover-foreground: oklch(0.145 0 0);
+  --public-primary: oklch(0.205 0 0);
+  --public-primary-foreground: oklch(0.985 0 0);
+  --public-secondary: oklch(0.97 0 0);
+  --public-secondary-foreground: oklch(0.205 0 0);
+  --public-muted: oklch(0.97 0 0);
+  --public-muted-foreground: oklch(0.556 0 0);
+  --public-accent: oklch(0.97 0 0);
+  --public-accent-foreground: oklch(0.205 0 0);
+  --public-destructive: oklch(0.577 0.245 27.325);
+  --public-destructive-foreground: oklch(0.985 0 0);
+  --public-border: oklch(0.922 0 0);
+  --public-input: oklch(0.922 0 0);
+  --public-ring: oklch(0.708 0 0);
+  min-height: 100vh;
+  background: var(--public-background);
+  color: var(--public-foreground);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.public-theme {
+  min-height: 100vh;
+  background: var(--public-background);
+  color: var(--public-foreground);
+}
+
+.dark .public-theme,
+.dark .public-scope {
+  --public-background: oklch(0.145 0 0);
+  --public-foreground: oklch(0.985 0 0);
+  --public-card: oklch(0.205 0 0);
+  --public-card-foreground: oklch(0.985 0 0);
+  --public-popover: oklch(0.205 0 0);
+  --public-popover-foreground: oklch(0.985 0 0);
+  --public-primary: oklch(0.922 0 0);
+  --public-primary-foreground: oklch(0.205 0 0);
+  --public-secondary: oklch(0.269 0 0);
+  --public-secondary-foreground: oklch(0.985 0 0);
+  --public-muted: oklch(0.269 0 0);
+  --public-muted-foreground: oklch(0.708 0 0);
+  --public-accent: oklch(0.269 0 0);
+  --public-accent-foreground: oklch(0.985 0 0);
+  --public-destructive: oklch(0.704 0.191 22.216);
+  --public-destructive-foreground: oklch(0.145 0 0);
+  --public-border: oklch(1 0 0 / 10%);
+  --public-input: oklch(1 0 0 / 15%);
+  --public-ring: oklch(0.556 0 0);
+}
+
+.public-theme *,
+.public-scope * {
+  box-sizing: border-box;
+}
+
+.public-theme img,
+.public-scope img {
+  max-width: 100%;
+}
+
+.public-dot-pattern {
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.dark .public-dot-pattern {
+  background-image: radial-gradient(#374151 1px, transparent 1px);
+}
+
+.public-spotlight {
+  background:
+    radial-gradient(circle at top, rgba(24, 24, 27, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 28%);
+}
+
+.dark .public-spotlight {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.14), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%);
+}
+
+@keyframes public-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+.public-float {
+  animation: public-float 6s ease-in-out infinite;
+}
+
+.public-prose {
+  color: inherit;
+}
+
+.public-prose a {
+  color: inherit;
+  text-decoration: underline;
+}

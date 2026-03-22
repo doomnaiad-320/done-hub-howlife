@@ -570,6 +570,7 @@
     "search": "搜尋",
     "times": "按次付費",
     "tokens": "按量付費",
+    "perRequestSuffix": "/次請求",
     "type": "類型",
     "input_audio_tokens": "音頻輸入倍率",
     "other": "其他",
@@ -617,7 +618,12 @@
     "billingMethod": "計費方式",
     "currentUserGroup": "當前用戶組",
     "viewDetail": "查看詳情",
-    "timeUnit": "次"
+    "timeUnit": "次",
+    "cardView": "卡片",
+    "listView": "列表",
+    "pageSize": "每頁數量",
+    "previous": "上一頁",
+    "next": "下一頁"
   },
   "nova 映射": "nova 映射",
   "onyx 映射": "onyx 映射",
@@ -1634,5 +1640,126 @@
     }
   },
   "禁用流式的模型": "停用流動式的模型",
-  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "呢度填寫禁用流式嘅模型，注意：如果填寫咗禁用流式嘅模型，咁就會喺流式請求時跳過呢個渠道。"
+  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "呢度填寫禁用流式嘅模型，注意：如果填寫咗禁用流式嘅模型，咁就會喺流式請求時跳過呢個渠道。",
+  "publicLanding": {
+    "nav": {
+      "features": "能力",
+      "faq": "常見問題",
+      "tagline": "統一 AI 接入與計費"
+    },
+    "hero": {
+      "badge": "面向多模型閘道嘅新版公開頁",
+      "titlePrefix": "用",
+      "titleSuffix": "統一模型接入、路由同計費",
+      "subtitleSuffix": "公開站、登入同註冊頁已更新，但仍保留現有 API、權限同多語言邏輯。",
+      "primaryAction": "開始使用",
+      "secondaryAction": "查看價格"
+    },
+    "highlights": {
+      "eyebrow": "核心能力",
+      "title": "一個前台入口，覆蓋模型接入到營運計費",
+      "description": "只展示你已接入並開放嘅模型能力，將用戶真正關心嘅資訊放前面。",
+      "gateway": {
+        "title": "只展示已接入模型",
+        "description": "公開頁只圍繞你真正接入嘅模型展示，唔會再帶出無關模型。"
+      },
+      "routing": {
+        "title": "按渠道同分組調度",
+        "description": "現有渠道、分組同模型配置會保留，後台業務結構唔使改。"
+      },
+      "billing": {
+        "title": "價格與額度聯動",
+        "description": "模型價格、額度同用戶實際體驗保持一致，更適合公開展示。"
+      },
+      "control": {
+        "title": "管理端保持可控",
+        "description": "只替換用戶端公開頁面，管理後台同現有營運入口不受影響。"
+      }
+    },
+    "features": {
+      "eyebrow": "模型與展示",
+      "title": "令公開頁同實際模型能力保持一致",
+      "description": "後台新增渠道、模型同價格之後，前台展示會同步更新，唔再暴露未接入模型。",
+      "group1": {
+        "item1": "用戶端只會睇到你已接入並開放嘅模型能力",
+        "item2": "登入同註冊繼續沿用現有 API、OAuth 同 WebAuthn 邏輯",
+        "item3": "首頁仍然保留 HomePageContent 自定義覆蓋能力"
+      },
+      "secondaryEyebrow": "多語言與營運",
+      "secondaryTitle": "前端體驗更新，但業務規則唔變",
+      "secondaryDescription": "價格、關於頁、註冊條件、驗證流程同主題切換都會沿用現有站點設定。",
+      "group2": {
+        "item1": "繼續支援簡體、繁體、English 同日本語",
+        "item2": "電郵驗證碼、邀請碼同 Turnstile 邏輯唔會回退",
+        "item3": "深色模式會同現有站點主題同步"
+      },
+      "viewPricing": "查看價格頁",
+      "learnMore": "查看關於頁"
+    },
+    "faq": {
+      "title": "常見問題",
+      "description": "講清楚新版公開頁點樣同現有登入流程同業務規則銜接。",
+      "item1": {
+        "question": "首頁仲可唔可以用自定義內容？",
+        "answer": "可以。如果後台設置咗 HomePageContent，首頁仍然會優先顯示自定義內容。"
+      },
+      "item2": {
+        "question": "現有第三方登入仲會保留嗎？",
+        "answer": "會。GitHub、微信、Lark、OIDC、LinuxDo 同 WebAuthn 登入邏輯都會保留。"
+      },
+      "item3": {
+        "question": "用戶端會唔會展示未接入模型？",
+        "answer": "唔會。公開頁只會圍繞你已接入並開放畀用戶嘅模型能力去展示。"
+      },
+      "item4": {
+        "question": "管理端都會一齊被替換嗎？",
+        "answer": "唔會。今次只替換用戶端首頁、登入同註冊頁，管理後台唔受影響。"
+      }
+    },
+    "cta": {
+      "eyebrow": "下一步",
+      "title": "將公開展示、登入註冊同你現有閘道能力接到同一套體驗上",
+      "description": "如果你已經準備好渠道、模型同價格配置，而家就可以直接用新版公開頁承接用戶流量。",
+      "primaryAction": "進入新版註冊"
+    },
+    "footer": {
+      "tagline": "公開頁同控制台並行工作",
+      "description": "新版公開頁用嚟承接用戶訪問，原有後台、控制台同配置系統保持不變。",
+      "product": "產品",
+      "account": "賬戶",
+      "copyright": "{{system}} · {{year}}"
+    }
+  },
+  "publicAuth": {
+    "or": "或",
+    "fields": {
+      "username": "用戶名",
+      "password": "密碼",
+      "confirmPassword": "確認密碼",
+      "email": "電郵",
+      "verificationCode": "驗證碼",
+      "inviteCode": "邀請碼"
+    },
+    "login": {
+      "title": "登入到你的賬戶",
+      "description": "繼續使用現有賬戶、第三方登入或 WebAuthn 進入控制台。",
+      "previewEyebrow": "保留現有登入邏輯",
+      "previewTitle": "新界面，但原有認證能力唔會丟失",
+      "previewDescription": "公開頁樣式已更新，但仍然兼容你現有嘅登入流程同站點配置。",
+      "previewItem1": "支援 GitHub、微信、Lark、OIDC、LinuxDo 登入",
+      "previewItem2": "繼續支援 WebAuthn 免密登入",
+      "previewItem3": "登入成功後仍然進入現有控制台",
+      "noAccount": "仲未有賬戶？"
+    },
+    "register": {
+      "title": "建立新賬戶",
+      "description": "註冊頁已換成新版公開樣式，同時沿用現有驗證規則。",
+      "previewEyebrow": "保留現有註冊邏輯",
+      "previewTitle": "邀請碼、驗證碼同風控仍然有效",
+      "previewDescription": "界面更新唔會破壞現有後端約束，用戶仍然按你配置嘅規則完成註冊。",
+      "previewItem1": "支援電郵驗證碼、邀請碼同 Turnstile",
+      "previewItem2": "密碼強度提示同錯誤反饋保持在線",
+      "previewItem3": "註冊完成後仍然跳轉到現有登入頁"
+    }
+  }
 }

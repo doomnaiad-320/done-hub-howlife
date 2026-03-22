@@ -4,6 +4,7 @@ import { Box } from '@mui/material';
 // project imports
 import Loadable from 'ui-component/Loadable';
 import MinimalLayout from 'layout/MinimalLayout';
+import PublicPageLayout from 'layout/PublicPageLayout';
 
 // login option 3 routing
 const AuthLogin = Loadable(lazy(() => import('views/Authentication/Auth/Login')));
@@ -37,67 +38,76 @@ const WithMargins = ({ children }) => (
 
 const OtherRoutes = {
   path: '/',
-  element: <MinimalLayout />,
   children: [
     {
-      path: '',
-      element: <Home />
+      element: <PublicPageLayout />,
+      children: [
+        {
+          index: true,
+          element: <Home />
+        },
+        {
+          path: 'login',
+          element: <AuthLogin />
+        },
+        {
+          path: 'register',
+          element: <AuthRegister />
+        }
+      ]
     },
     {
-      path: '/about',
-      element: <About />
-    },
-    {
-      path: '/login',
-      element: <AuthLogin />
-    },
-    {
-      path: '/register',
-      element: <AuthRegister />
-    },
-    {
-      path: '/reset',
-      element: <ForgetPassword />
-    },
-    {
-      path: '/user/reset',
-      element: <ResetPassword />
-    },
-    {
-      path: '/oauth/github',
-      element: <GitHubOAuth />
-    },
-    {
-      path: '/oauth/oidc',
-      element: <OIDCOAuth />
-    },
-    {
-      path: '/oauth/lark',
-      element: <LarkOAuth />
-    },
-    {
-      path: '/oauth/linuxdo',
-      element: <LinuxDoOAuth />
-    },
-    {
-      path: '/404',
-      element: <NotFoundView />
-    },
-    {
-      path: '/jump',
-      element: <Jump />
-    },
-    {
-      path: '/playground',
-      element: <Playground />
-    },
-    {
-      path: '/price',
-      element: (
-        <WithMargins>
-          <ModelPrice />
-        </WithMargins>
-      )
+      element: <MinimalLayout />,
+      children: [
+        {
+          path: 'about',
+          element: <About />
+        },
+        {
+          path: 'reset',
+          element: <ForgetPassword />
+        },
+        {
+          path: 'user/reset',
+          element: <ResetPassword />
+        },
+        {
+          path: 'oauth/github',
+          element: <GitHubOAuth />
+        },
+        {
+          path: 'oauth/oidc',
+          element: <OIDCOAuth />
+        },
+        {
+          path: 'oauth/lark',
+          element: <LarkOAuth />
+        },
+        {
+          path: 'oauth/linuxdo',
+          element: <LinuxDoOAuth />
+        },
+        {
+          path: '404',
+          element: <NotFoundView />
+        },
+        {
+          path: 'jump',
+          element: <Jump />
+        },
+        {
+          path: 'playground',
+          element: <Playground />
+        },
+        {
+          path: 'price',
+          element: (
+            <WithMargins>
+              <ModelPrice />
+            </WithMargins>
+          )
+        }
+      ]
     }
   ]
 };

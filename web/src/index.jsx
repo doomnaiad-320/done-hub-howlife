@@ -10,6 +10,7 @@ import { store } from 'store';
 
 // style + assets
 import 'assets/scss/style.scss';
+import 'styles/public-tailwind.css';
 import config from './config';
 import reportWebVitals from 'reportWebVitals';
 // ==============================|| REACT DOM RENDER  ||============================== //

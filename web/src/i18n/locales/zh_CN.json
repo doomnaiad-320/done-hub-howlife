@@ -722,6 +722,7 @@
     "search": "搜索模型名称或描述",
     "tokens": "按量付费",
     "times": "按次付费",
+    "perRequestSuffix": "/次请求",
     "all": "全部",
     "price": "价格",
     "extraRatios": "扩展价格",
@@ -764,7 +765,12 @@
     "billingMethod": "计费方式",
     "currentUserGroup": "当前用户组",
     "viewDetail": "查看详情",
-    "timeUnit": "次"
+    "timeUnit": "次",
+    "cardView": "卡片",
+    "listView": "列表",
+    "pageSize": "每页数量",
+    "previous": "上一页",
+    "next": "下一页"
   },
   "paymentPage": {
     "orderList": "订单列表",
@@ -1629,5 +1635,126 @@
     "nameTip": "渠道名称"
   },
   "禁用流式的模型": "禁用流式的模型",
-  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道"
+  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道",
+  "publicLanding": {
+    "nav": {
+      "features": "能力",
+      "faq": "常见问题",
+      "tagline": "统一 AI 接入与计费"
+    },
+    "hero": {
+      "badge": "面向多模型网关的新版公开页",
+      "titlePrefix": "用",
+      "titleSuffix": "统一模型接入、路由与计费",
+      "subtitleSuffix": "面向公开站点、登录与注册的新版体验，同时保留现有 API、权限与多语言逻辑。",
+      "primaryAction": "开始使用",
+      "secondaryAction": "查看价格"
+    },
+    "highlights": {
+      "eyebrow": "核心能力",
+      "title": "一个前台入口，覆盖模型接入到运营计费",
+      "description": "只展示你已经接入并开放的模型能力，把用户真正关心的信息前置。",
+      "gateway": {
+        "title": "只展示已接入模型",
+        "description": "公开页围绕你已接入、已开放的模型展示，不再把无关模型带给用户。"
+      },
+      "routing": {
+        "title": "按渠道与分组调度",
+        "description": "继续沿用现有渠道、分组和模型配置，不改动后台业务结构。"
+      },
+      "billing": {
+        "title": "价格与额度联动",
+        "description": "模型价格、额度和用户实际使用体验保持一致，方便公开展示。"
+      },
+      "control": {
+        "title": "管理员端保持可控",
+        "description": "只替换用户端公开页面，管理后台和现有运维入口不受影响。"
+      }
+    },
+    "features": {
+      "eyebrow": "模型与展示",
+      "title": "让公开页和模型能力保持一致",
+      "description": "后台增加渠道、模型和价格后，前台展示会跟着同步，不再暴露未接入或无关模型。",
+      "group1": {
+        "item1": "用户端只看到你已接入并开放的模型能力",
+        "item2": "登录、注册继续复用现有 API、OAuth 和 WebAuthn 逻辑",
+        "item3": "首页继续保留 HomePageContent 自定义内容覆盖能力"
+      },
+      "secondaryEyebrow": "多语言与运营",
+      "secondaryTitle": "前端体验更新，但业务约束不变",
+      "secondaryDescription": "定价、介绍、注册条件、验证码和主题切换仍然沿用现有站点配置。",
+      "group2": {
+        "item1": "继续支持简体、繁体、English 和日本語",
+        "item2": "邮箱验证码、邀请码与 Turnstile 逻辑不回退",
+        "item3": "深色模式与系统主题保持同步"
+      },
+      "viewPricing": "查看价格页",
+      "learnMore": "查看关于页"
+    },
+    "faq": {
+      "title": "常见问题",
+      "description": "关于这套新版公开页、认证流程和现有业务逻辑的衔接说明。",
+      "item1": {
+        "question": "首页还能继续使用自定义内容吗？",
+        "answer": "可以。如果后台设置了 HomePageContent，首页仍然优先显示自定义内容。"
+      },
+      "item2": {
+        "question": "现有第三方登录还会继续保留吗？",
+        "answer": "会。GitHub、微信、Lark、OIDC、LinuxDo 和 WebAuthn 登录逻辑都继续保留。"
+      },
+      "item3": {
+        "question": "用户端会展示未接入的模型吗？",
+        "answer": "不会。公开页只围绕你已经接入并开放给用户的模型能力进行展示。"
+      },
+      "item4": {
+        "question": "管理员端也会一起被替换吗？",
+        "answer": "不会。这次只替换用户端首页、登录和注册页，后台管理界面不受影响。"
+      }
+    },
+    "cta": {
+      "eyebrow": "继续下一步",
+      "title": "把公开展示、登录注册和现有网关能力接到同一套体验上",
+      "description": "如果你已经准备好了模型、渠道和价格配置，现在可以直接用新的用户端首页承接用户访问。",
+      "primaryAction": "进入新版注册"
+    },
+    "footer": {
+      "tagline": "公开页与控制台并行工作",
+      "description": "新的公开页用于承接用户访问，原有后台、控制台和配置体系保持不变。",
+      "product": "产品",
+      "account": "账户",
+      "copyright": "{{system}} · {{year}}"
+    }
+  },
+  "publicAuth": {
+    "or": "或",
+    "fields": {
+      "username": "用户名",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "email": "邮箱",
+      "verificationCode": "验证码",
+      "inviteCode": "邀请码"
+    },
+    "login": {
+      "title": "登录到你的账户",
+      "description": "继续使用现有账号、第三方登录或 WebAuthn 进入控制台。",
+      "previewEyebrow": "保留现有登录逻辑",
+      "previewTitle": "新界面，原有认证能力不丢",
+      "previewDescription": "公开页样式已经更新，但仍然兼容你当前的登录流程与站点配置。",
+      "previewItem1": "支持 GitHub、微信、Lark、OIDC、LinuxDo 登录",
+      "previewItem2": "继续支持 WebAuthn 无密码认证",
+      "previewItem3": "登录成功后仍进入现有控制台",
+      "noAccount": "还没有账户？"
+    },
+    "register": {
+      "title": "创建新账户",
+      "description": "注册页已替换为新的公开样式，同时继续沿用现有验证规则。",
+      "previewEyebrow": "保留现有注册逻辑",
+      "previewTitle": "邀请码、验证码和风控仍然生效",
+      "previewDescription": "界面更新不会破坏现有后端约束，用户仍按你配置的规则完成注册。",
+      "previewItem1": "支持邮箱验证码、邀请码与 Turnstile",
+      "previewItem2": "密码强度提示与错误反馈保持在线",
+      "previewItem3": "注册完成后仍跳转到现有登录页"
+    }
+  }
 }

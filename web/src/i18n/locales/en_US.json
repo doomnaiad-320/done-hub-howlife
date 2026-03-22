@@ -616,6 +616,7 @@
     "search": "Search model name or description",
     "times": "Pay per call",
     "tokens": "Pay per token",
+    "perRequestSuffix": " / request",
     "type": "Type",
     "input_audio_tokens": "Audio Input Ratio",
     "other": "Other",
@@ -663,7 +664,12 @@
     "billingMethod": "Billing Method",
     "currentUserGroup": "Current User Group",
     "viewDetail": "View Details",
-    "timeUnit": "Time"
+    "timeUnit": "Time",
+    "cardView": "Cards",
+    "listView": "List",
+    "pageSize": "Per page",
+    "previous": "Previous",
+    "next": "Next"
   },
   "nova 映射": "nova mapping",
   "onyx 映射": "onyx mapping",
@@ -1678,5 +1684,126 @@
       }
     }
   },
-  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "Fill in here to disable the streaming model. Note: If you fill in to disable the streaming model, these models will be skipped for streaming requests on that channel."
+  "这里填写禁用流式的模型，注意：如果填写了禁用流式的模型，那么这些模型在流式请求时会跳过该渠道": "Fill in here to disable the streaming model. Note: If you fill in to disable the streaming model, these models will be skipped for streaming requests on that channel.",
+  "publicLanding": {
+    "nav": {
+      "features": "Features",
+      "faq": "FAQ",
+      "tagline": "Unified AI access and billing"
+    },
+    "hero": {
+      "badge": "A refreshed public experience for multi-model gateways",
+      "titlePrefix": "Use",
+      "titleSuffix": "to unify model access, routing, and billing",
+      "subtitleSuffix": "The public site, sign-in, and sign-up pages are refreshed while keeping the current API, permissions, and multilingual behavior intact.",
+      "primaryAction": "Get Started",
+      "secondaryAction": "View Pricing"
+    },
+    "highlights": {
+      "eyebrow": "Core Capabilities",
+      "title": "One public entry that covers model access and billing",
+      "description": "Only the models you already connected and exposed are presented, with the information users actually need placed first.",
+      "gateway": {
+        "title": "Only connected models are shown",
+        "description": "The public pages focus on the models you really connected instead of exposing unrelated ones."
+      },
+      "routing": {
+        "title": "Routing by channel and group",
+        "description": "Existing channel, group, and model configurations stay in place without changing admin-side business logic."
+      },
+      "billing": {
+        "title": "Pricing stays aligned",
+        "description": "Model pricing, quota, and the user-facing experience stay consistent for public presentation."
+      },
+      "control": {
+        "title": "Admin remains in control",
+        "description": "Only the user-facing public pages are replaced. The admin console and operations flow remain untouched."
+      }
+    },
+    "features": {
+      "eyebrow": "Models and Presentation",
+      "title": "Keep the public site aligned with actual model capabilities",
+      "description": "When you add channels, models, and prices in the backend, the public presentation follows without exposing disconnected models.",
+      "group1": {
+        "item1": "Users only see the models and capabilities you already connected",
+        "item2": "Sign in and sign up keep using the current API, OAuth, and WebAuthn logic",
+        "item3": "The homepage still supports HomePageContent overrides when configured"
+      },
+      "secondaryEyebrow": "Localization and Operations",
+      "secondaryTitle": "The frontend changed, but the rules did not",
+      "secondaryDescription": "Pricing, about content, registration requirements, verification flows, and theme switching still follow current site settings.",
+      "group2": {
+        "item1": "Simplified Chinese, Traditional Chinese, English, and Japanese stay supported",
+        "item2": "Email verification, invite codes, and Turnstile safeguards remain active",
+        "item3": "Dark mode stays synced with the current site theme"
+      },
+      "viewPricing": "Open Pricing",
+      "learnMore": "Open About"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "How the refreshed public pages fit with the current authentication flow and business rules.",
+      "item1": {
+        "question": "Can the homepage still use custom content?",
+        "answer": "Yes. If HomePageContent is configured in the backend, the homepage will still prefer that custom content."
+      },
+      "item2": {
+        "question": "Are existing third-party login options still available?",
+        "answer": "Yes. GitHub, WeChat, Lark, OIDC, LinuxDo, and WebAuthn login flows are preserved."
+      },
+      "item3": {
+        "question": "Will users see models that are not actually connected?",
+        "answer": "No. The public pages now focus on capabilities backed by the models you already connected and exposed."
+      },
+      "item4": {
+        "question": "Is the admin side replaced too?",
+        "answer": "No. This change only replaces the user-facing home, sign-in, and sign-up pages."
+      }
+    },
+    "cta": {
+      "eyebrow": "Next Step",
+      "title": "Bring the public site and your existing gateway workflow into one experience",
+      "description": "If your channels, models, and prices are already configured, the refreshed public pages can now take over the user-facing entry point.",
+      "primaryAction": "Open Sign Up"
+    },
+    "footer": {
+      "tagline": "Public site and console working side by side",
+      "description": "The refreshed public pages handle user entry while the existing admin console and configuration system remain unchanged.",
+      "product": "Product",
+      "account": "Account",
+      "copyright": "{{system}} · {{year}}"
+    }
+  },
+  "publicAuth": {
+    "or": "or",
+    "fields": {
+      "username": "Username",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "email": "Email",
+      "verificationCode": "Verification Code",
+      "inviteCode": "Invite Code"
+    },
+    "login": {
+      "title": "Sign in to your account",
+      "description": "Use your existing account, OAuth providers, or WebAuthn to reach the console.",
+      "previewEyebrow": "Current login logic preserved",
+      "previewTitle": "New interface, same authentication capability",
+      "previewDescription": "The public UI is refreshed, but it still stays compatible with the current login flow and site settings.",
+      "previewItem1": "Supports GitHub, WeChat, Lark, OIDC, and LinuxDo sign-in",
+      "previewItem2": "WebAuthn passwordless login is still available",
+      "previewItem3": "Successful login still lands in the existing console",
+      "noAccount": "Don't have an account?"
+    },
+    "register": {
+      "title": "Create a new account",
+      "description": "The sign-up page now uses the refreshed public UI while keeping current validation rules.",
+      "previewEyebrow": "Current registration logic preserved",
+      "previewTitle": "Invite codes, verification, and risk control still apply",
+      "previewDescription": "The interface changed without weakening current backend constraints. Users still register under your existing rules.",
+      "previewItem1": "Supports email verification, invite codes, and Turnstile",
+      "previewItem2": "Password strength feedback and error states remain in place",
+      "previewItem3": "Successful sign-up still redirects to the existing login page"
+    }
+  }
 }
