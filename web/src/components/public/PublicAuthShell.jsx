@@ -1,8 +1,5 @@
-import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
-import PublicLanguageMenu from './PublicLanguageMenu';
-import PublicLogo from './PublicLogo';
-import PublicThemeToggle from './PublicThemeToggle';
+import PublicNavbar from './PublicNavbar';
 
 const PublicAuthShell = ({
   title,
@@ -16,23 +13,11 @@ const PublicAuthShell = ({
   children
 }) => {
   return (
-    <div className="public-theme">
-      <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">
-        <div className="flex min-h-screen flex-col bg-muted/30">
-          <div className="mx-auto flex w-full max-w-xl items-center justify-between px-6 py-6">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="rounded-2xl border border-border bg-card px-2 py-1.5 shadow-sm">
-                <PublicLogo className="h-8" />
-              </div>
-            </Link>
-
-            <div className="flex items-center gap-3">
-              <PublicThemeToggle />
-              <PublicLanguageMenu compact />
-            </div>
-          </div>
-
-          <div className="flex flex-1 items-center justify-center px-6 py-8">
+    <div className="public-theme flex min-h-screen flex-col bg-background">
+      <PublicNavbar landingAnchors={false} />
+      <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">
+        <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-muted/30">
+          <div className="flex flex-1 items-center justify-center px-6 py-8 md:px-8 md:py-10">
             <div className="w-full max-w-xl rounded-[32px] border border-border bg-card p-6 shadow-lg shadow-black/5 sm:p-8">
               <div className="mb-8">
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h1>

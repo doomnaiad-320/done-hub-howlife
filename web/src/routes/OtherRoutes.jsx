@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 import Loadable from 'ui-component/Loadable';
 import MinimalLayout from 'layout/MinimalLayout';
 import PublicPageLayout from 'layout/PublicPageLayout';
+import PublicSiteLayout from 'layout/PublicSiteLayout';
 
 // login option 3 routing
 const AuthLogin = Loadable(lazy(() => import('views/Authentication/Auth/Login')));
@@ -22,17 +23,7 @@ const Jump = Loadable(lazy(() => import('views/Jump')));
 const Playground = Loadable(lazy(() => import('views/Playground')));
 const ModelPrice = Loadable(lazy(() => import('views/ModelPrice')));
 
-const WithMargins = ({ children }) => (
-  <Box
-    sx={{
-      maxWidth: 'none',
-      margin: '0 auto',
-      padding: { xs: 0, sm: '0 24px' }
-    }}
-  >
-    {children}
-  </Box>
-);
+const WithMargins = ({ children }) => <Box sx={{ maxWidth: 'none', margin: '0 auto', padding: { xs: 0, sm: '24px 24px 0' } }}>{children}</Box>;
 
 // ==============================|| AUTHENTICATION ROUTING ||============================== //
 
@@ -57,12 +48,25 @@ const OtherRoutes = {
       ]
     },
     {
-      element: <MinimalLayout />,
+      element: <PublicSiteLayout />,
       children: [
         {
           path: 'about',
           element: <About />
         },
+        {
+          path: 'price',
+          element: (
+            <WithMargins>
+              <ModelPrice />
+            </WithMargins>
+          )
+        }
+      ]
+    },
+    {
+      element: <MinimalLayout />,
+      children: [
         {
           path: 'reset',
           element: <ForgetPassword />
@@ -98,14 +102,6 @@ const OtherRoutes = {
         {
           path: 'playground',
           element: <Playground />
-        },
-        {
-          path: 'price',
-          element: (
-            <WithMargins>
-              <ModelPrice />
-            </WithMargins>
-          )
         }
       ]
     }

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Flags from 'country-flag-icons/react/3x2';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Languages } from 'lucide-react';
 import i18nList from 'i18n/i18nList';
 import useI18n from 'hooks/useI18n';
 import { cn } from './utils';
 
-const PublicLanguageMenu = ({ className, compact = false }) => {
+const PublicLanguageMenu = ({ className, compact = false, iconOnly = false }) => {
   const i18n = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -34,11 +34,16 @@ const PublicLanguageMenu = ({ className, compact = false }) => {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        title={currentLanguage.name}
+        className={cn(
+          'inline-flex h-10 items-center gap-2 rounded-full border border-border bg-background px-3 text-sm text-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+          iconOnly && 'w-10 justify-center px-0'
+        )}
       >
-        {CurrentFlag ? <CurrentFlag className="h-4 w-5 rounded-[2px]" /> : null}
-        {!compact ? <span>{currentLanguage.name}</span> : null}
-        <ChevronDown className="h-4 w-4" />
+        {iconOnly ? <Languages className="h-4 w-4" /> : CurrentFlag ? <CurrentFlag className="h-4 w-5 rounded-[2px]" /> : null}
+        {!compact && !iconOnly ? <span>{currentLanguage.name}</span> : null}
+        {!iconOnly ? <ChevronDown className="h-4 w-4" /> : null}
+        <span className="sr-only">{currentLanguage.name}</span>
       </button>
 
       {open ? (
