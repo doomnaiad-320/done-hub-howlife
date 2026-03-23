@@ -19,3 +19,6 @@ one-api
 _output
 .DS_Store
 vite-version/
+.envserver
+.gocache
+.gomodcache
