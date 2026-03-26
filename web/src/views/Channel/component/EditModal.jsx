@@ -966,9 +966,7 @@ const EditModal = ({ open, channelId, onCancel, onOk, groupOptions, isTag, model
         initChannel(data.type)
         setInitialInput(data)
 
-        if (!isTag && data.tag) {
-          setHasTag(true)
-        }
+        setHasTag(Boolean(!isTag && data.tag))
       } else {
         showError(message)
       }
@@ -1017,47 +1015,44 @@ const EditModal = ({ open, channelId, onCancel, onOk, groupOptions, isTag, model
 
             return (
               <form noValidate onSubmit={handleSubmit}>
-                {!isTag && (
-                  <FormControl fullWidth error={Boolean(touched.type && errors.type)}
-                               sx={{ ...theme.typography.otherInput }}>
-                    <InputLabel htmlFor="channel-type-label">{customizeT(inputLabel.type)}</InputLabel>
-                    <Select
-                      id="channel-type-label"
-                      label={customizeT(inputLabel.type)}
-                      value={values.type}
-                      name="type"
-                      onBlur={handleBlur}
-                      onChange={(e) => {
-                        handleChange(e)
-                        handleTypeChange(setFieldValue, e.target.value, values)
-                      }}
-                      disabled={hasTag}
-                      MenuProps={{
-                        PaperProps: {
-                          style: {
-                            maxHeight: 200
-                          }
+                <FormControl fullWidth error={Boolean(touched.type && errors.type)}
+                             sx={{ ...theme.typography.otherInput }}>
+                  <InputLabel htmlFor="channel-type-label">{customizeT(inputLabel.type)}</InputLabel>
+                  <Select
+                    id="channel-type-label"
+                    label={customizeT(inputLabel.type)}
+                    value={values.type}
+                    name="type"
+                    onBlur={handleBlur}
+                    onChange={(e) => {
+                      handleChange(e)
+                      handleTypeChange(setFieldValue, e.target.value, values)
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          maxHeight: 200
                         }
-                      }}
-                    >
-                      {Object.values(CHANNEL_OPTIONS).map((option) => {
-                        return (
-                          <MenuItem key={option.value} value={option.value}>
-                            {option.text}
-                          </MenuItem>
-                        )
-                      })}
-                    </Select>
-                    {touched.type && errors.type ? (
-                      <FormHelperText error id="helper-tex-channel-type-label">
-                        {errors.type}
-                      </FormHelperText>
-                    ) : (
-                      <FormHelperText
-                        id="helper-tex-channel-type-label"> {customizeT(inputPrompt.type)} </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
+                      }
+                    }}
+                  >
+                    {Object.values(CHANNEL_OPTIONS).map((option) => {
+                      return (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.text}
+                        </MenuItem>
+                      )
+                    })}
+                  </Select>
+                  {touched.type && errors.type ? (
+                    <FormHelperText error id="helper-tex-channel-type-label">
+                      {errors.type}
+                    </FormHelperText>
+                  ) : (
+                    <FormHelperText
+                      id="helper-tex-channel-type-label"> {customizeT(inputPrompt.type)} </FormHelperText>
+                  )}
+                </FormControl>
 
                 <FormControl fullWidth error={Boolean(touched.tag && errors.tag)}
                              sx={{ ...theme.typography.otherInput }}>

@@ -144,6 +144,7 @@ func UpdateChannelsTag(tag string, channel *Channel) error {
 
 	err = tx.Model(Channel{}).Where("tag = ?", tag).Updates(
 		Channel{
+			Type:               channel.Type,
 			BaseURL:            channel.BaseURL,
 			Other:              channel.Other,
 			Models:             channel.Models,
