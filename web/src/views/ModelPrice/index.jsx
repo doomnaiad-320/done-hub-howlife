@@ -580,26 +580,25 @@ export default function ModelPrice() {
         {filteredModels.length > 0 ? (
           <>
             {viewMode === 'card' ? (
-              <section
-                className="grid gap-4"
-                style={{
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))'
-                }}
-              >
+              <section className="flex flex-wrap gap-4">
                 {paginatedModels.map((model) => (
-                  <ModelCard
+                  <div
                     key={model.model}
-                    model={model.model}
-                    provider={model.provider}
-                    modelInfo={model.modelInfo}
-                    price={model.price}
-                    group={model.group}
-                    ownedbyIcon={getIconByName(model.provider)}
-                    unit={unit}
-                    type={model.type}
-                    formatPrice={formatPrice}
-                    onViewDetail={() => handleViewDetail(model)}
-                  />
+                    className="w-full sm:flex-none sm:w-[calc((100%_-_1rem)/2)] sm:max-w-[calc((100%_-_1rem)/2)] lg:w-[calc((100%_-_2rem)/3)] lg:max-w-[calc((100%_-_2rem)/3)] xl:w-[calc((100%_-_4rem)/5)] xl:max-w-[calc((100%_-_4rem)/5)]"
+                  >
+                    <ModelCard
+                      model={model.model}
+                      provider={model.provider}
+                      modelInfo={model.modelInfo}
+                      price={model.price}
+                      group={model.group}
+                      ownedbyIcon={getIconByName(model.provider)}
+                      unit={unit}
+                      type={model.type}
+                      formatPrice={formatPrice}
+                      onViewDetail={() => handleViewDetail(model)}
+                    />
+                  </div>
                 ))}
               </section>
             ) : (
