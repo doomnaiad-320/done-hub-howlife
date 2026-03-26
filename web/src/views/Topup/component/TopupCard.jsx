@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import {
   Typography,
   Stack,
@@ -27,7 +28,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { showError, showInfo, showSuccess, renderQuota, trims } from 'utils/common';
 import { useTranslation } from 'react-i18next';
 
-const TopupCard = () => {
+const TopupCard = ({ onRecordChanged }) => {
   const { t } = useTranslation(); // Translation hook
   const theme = useTheme();
   const [redemptionCode, setRedemptionCode] = useState('');
@@ -64,11 +65,12 @@ const TopupCard = () => {
       });
       const { success, message, data } = res.data;
       if (success) {
-        showSuccess('充值成功！');
+        showSuccess(t('topupCard.topupsuccess'));
         setUserQuota((quota) => {
           return quota + data;
         });
         setRedemptionCode('');
+        onRecordChanged?.();
       } else {
         showError(message);
       }
@@ -341,7 +343,16 @@ const TopupCard = () => {
               {t('topupCard.topup')}
             </Button>
           </Stack>
-          <PayDialog open={open} onClose={onClosePayDialog} amount={amount} uuid={selectedPayment.uuid} />
+          <PayDialog
+            open={open}
+            onClose={onClosePayDialog}
+            amount={amount}
+            uuid={selectedPayment.uuid}
+            onSuccess={() => {
+              getUserQuota().then();
+              onRecordChanged?.();
+            }}
+          />
         </SubCard>
       )}
 
@@ -385,6 +396,10 @@ const TopupCard = () => {
       </SubCard>
     </UserCard>
   );
+};
+
+TopupCard.propTypes = {
+  onRecordChanged: PropTypes.func
 };
 
 export default TopupCard;

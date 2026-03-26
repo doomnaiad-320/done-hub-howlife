@@ -1386,7 +1386,21 @@
     "topupsuccess": "充值成功！"
   },
   "topupPage": {
-    "alertMessage": "充值記錄以及邀請記錄請在日誌中查詢。充值記錄請在日誌中選擇類型【充值】查詢；邀請記錄請在日誌中選擇【系統】查詢"
+    "alertMessage": "下方已展示最近的充值記錄和兌換記錄，可直接查看到帳情況。",
+    "recordsTitle": "充值與兌換記錄",
+    "refresh": "刷新",
+    "rechargeLogs": "充值記錄",
+    "redemptionLogs": "兌換記錄",
+    "emptyRechargeLogs": "暫無充值記錄",
+    "emptyRedemptionLogs": "暫無兌換記錄",
+    "paymentMethod": "支付方式",
+    "detail": "詳情",
+    "status": {
+      "pending": "待支付",
+      "success": "支付成功",
+      "failed": "支付失敗",
+      "closed": "已關閉"
+    }
   },
   "ui-component": {
     "allModels": "查看所有模型",

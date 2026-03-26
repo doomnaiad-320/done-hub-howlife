@@ -110,6 +110,32 @@ func GetUserLogsList(c *gin.Context) {
 	})
 }
 
+func GetUserRedemptionLogsList(c *gin.Context) {
+	userId := c.GetInt("id")
+
+	var params model.LogsListParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
+	if checkLogTimeRange(c, params.StartTimestamp, params.EndTimestamp) {
+		return
+	}
+
+	logs, err := model.GetUserRedemptionLogsList(userId, &params)
+	if err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    logs,
+	})
+}
+
 func GetLogsStat(c *gin.Context) {
 	var params model.LogsListParams
 	if err := c.ShouldBindQuery(&params); err != nil {

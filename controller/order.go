@@ -294,6 +294,28 @@ func GetOrderList(c *gin.Context) {
 	})
 }
 
+func GetUserOrderList(c *gin.Context) {
+	userId := c.GetInt("id")
+
+	var params model.SearchOrderParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
+	orders, err := model.GetUserOrderList(userId, &params)
+	if err != nil {
+		common.APIRespondWithError(c, http.StatusOK, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    orders,
+	})
+}
+
 // EpayCallback 固定的易支付回调接口
 func EpayCallback(c *gin.Context) {
 	tradeNo := c.Query("out_trade_no")

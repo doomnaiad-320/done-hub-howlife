@@ -510,7 +510,21 @@
     "delTip": "是否删除兑换码"
   },
   "topupPage": {
-    "alertMessage": "充值记录以及邀请记录请在日志中查询。充值记录请在日志中选择类型【充值】查询；邀请记录请在日志中选择【系统】查询"
+    "alertMessage": "下方已展示最近的充值记录和兑换记录，可直接查看到账情况。",
+    "recordsTitle": "充值与兑换记录",
+    "refresh": "刷新",
+    "rechargeLogs": "充值记录",
+    "redemptionLogs": "兑换记录",
+    "emptyRechargeLogs": "暂无充值记录",
+    "emptyRedemptionLogs": "暂无兑换记录",
+    "paymentMethod": "支付方式",
+    "detail": "详情",
+    "status": {
+      "pending": "待支付",
+      "success": "支付成功",
+      "failed": "支付失败",
+      "closed": "已关闭"
+    }
   },
   "topupCard": {
     "topup": "充值",

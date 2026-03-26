@@ -9,7 +9,7 @@ import { API } from 'utils/api';
 import { showError } from 'utils/common';
 import { useSelector } from 'react-redux';
 
-const PayDialog = ({ open, onClose, amount, uuid }) => {
+const PayDialog = ({ open, onClose, amount, uuid, onSuccess }) => {
   const theme = useTheme();
   const siteInfo = useSelector((state) => state.siteInfo);
   const defaultLogo = theme.palette.mode === 'light' ? '/logo-loading.svg' : '/logo-loading-white.svg';
@@ -41,11 +41,12 @@ const PayDialog = ({ open, onClose, amount, uuid }) => {
           setQrCodeUrl(null);
           clearInterval(id);
           setIntervalId(null);
+          onSuccess?.();
         }
       });
     }, 3000);
     setIntervalId(id);
-  }, []);
+  }, [onSuccess]);
 
   function openPayUrl(method, url, params) {
     const form = document.createElement('form');
@@ -165,5 +166,6 @@ PayDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func,
   amount: PropTypes.number,
-  uuid: PropTypes.string
+  uuid: PropTypes.string,
+  onSuccess: PropTypes.func
 };

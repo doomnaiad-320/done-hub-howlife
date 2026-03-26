@@ -1436,7 +1436,21 @@
     "topupsuccess": "Top up successful!"
   },
   "topupPage": {
-    "alertMessage": "Please check the recharge records and invitation records in the logs. For recharge records, select the type [Recharge] in the log; for invitation records, select [System] in the log."
+    "alertMessage": "Recent recharge and redemption records are shown below for quick review.",
+    "recordsTitle": "Recharge & Redemption Records",
+    "refresh": "Refresh",
+    "rechargeLogs": "Recharge Records",
+    "redemptionLogs": "Redemption Records",
+    "emptyRechargeLogs": "No recharge records yet",
+    "emptyRedemptionLogs": "No redemption records yet",
+    "paymentMethod": "Payment Method",
+    "detail": "Detail",
+    "status": {
+      "pending": "Pending",
+      "success": "Paid",
+      "failed": "Failed",
+      "closed": "Closed"
+    }
   },
   "ui-component": {
     "allModels": "View all models",

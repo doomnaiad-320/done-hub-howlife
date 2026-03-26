@@ -112,6 +112,11 @@ func GetOrderList(params *SearchOrderParams) (*DataResult[Order], error) {
 	return PaginateAndOrder(db, &params.PaginationParams, &orders, allowedOrderFields)
 }
 
+func GetUserOrderList(userId int, params *SearchOrderParams) (*DataResult[Order], error) {
+	params.UserId = userId
+	return GetOrderList(params)
+}
+
 type OrderStatistics struct {
 	Quota         int64   `json:"quota"`
 	Money         float64 `json:"money"`

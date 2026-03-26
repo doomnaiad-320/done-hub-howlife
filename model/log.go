@@ -289,6 +289,22 @@ func GetUserLogsList(userId int, params *LogsListParams) (*DataResult[Log], erro
 	return result, nil
 }
 
+func GetUserRedemptionLogsList(userId int, params *LogsListParams) (*DataResult[Log], error) {
+	var logs []*Log
+
+	tx := DB.Where("user_id = ? AND type = ? AND content LIKE ?", userId, LogTypeTopup, "通过兑换码充值%").Omit("id")
+	filterParams := *params
+	filterParams.LogType = LogTypeUnknown
+	tx = applyLogsListFilters(tx, &filterParams, false)
+
+	result, err := PaginateAndOrder[Log](tx, &filterParams.PaginationParams, &logs, allowedLogsOrderFields)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetAllUserLogsList returns all user logs matching the criteria without pagination (for export)
 func GetAllUserLogsList(userId int, params *LogsListParams) ([]*Log, error) {
 	var logs []*Log

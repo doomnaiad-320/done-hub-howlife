@@ -1376,7 +1376,21 @@
     "topupsuccess": "チャージが成功しました！"
   },
   "topupPage": {
-    "alertMessage": "チャージ記録および招待記録はログで確認してください。チャージ記録はログでタイプ【チャージ】を選択して確認してください；招待記録はログで【システム】を選択して確認してください"
+    "alertMessage": "最近のチャージ記録と交換記録は下に表示されます。",
+    "recordsTitle": "チャージ・交換記録",
+    "refresh": "更新",
+    "rechargeLogs": "チャージ記録",
+    "redemptionLogs": "交換記録",
+    "emptyRechargeLogs": "チャージ記録はまだありません",
+    "emptyRedemptionLogs": "交換記録はまだありません",
+    "paymentMethod": "支払い方法",
+    "detail": "詳細",
+    "status": {
+      "pending": "支払い待ち",
+      "success": "支払い成功",
+      "failed": "支払い失敗",
+      "closed": "終了"
+    }
   },
   "ui-component": {
     "allModels": "すべてのモデルを見る",

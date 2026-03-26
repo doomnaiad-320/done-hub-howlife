@@ -85,7 +85,7 @@ func GetPanymentList(params *SearchPaymentParams) (*DataResult[Payment], error) 
 
 func GetUserPaymentList() ([]*Payment, error) {
 	var payments []*Payment
-	err := DB.Model(payments).Select("uuid, name, icon, fixed_fee, percent_fee, currency, currency_rate, sort").Where("enable = ?", true).Find(&payments).Error
+	err := DB.Model(payments).Select("id, uuid, name, icon, fixed_fee, percent_fee, currency, currency_rate, sort").Where("enable = ?", true).Find(&payments).Error
 	return payments, err
 }
 
