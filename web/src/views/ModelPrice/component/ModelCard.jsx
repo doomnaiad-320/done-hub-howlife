@@ -2,114 +2,218 @@ import PropTypes from 'prop-types';
 import { Card, Typography, Box, Avatar, Stack, IconButton, Tooltip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Icon } from '@iconify/react';
-import Label from 'ui-component/Label';
-import { MODALITY_OPTIONS } from 'constants/Modality';
 import { copy } from 'utils/common';
 import { useTranslation } from 'react-i18next';
-import { inferApiEndpoints, parseJsonArray } from './modelEndpointUtils';
+
+function DetailRow({ label, children, divider = true }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      spacing={1.5}
+      sx={{
+        py: 0.88,
+        borderTop: divider ? '1px solid' : 'none',
+        borderColor: 'divider'
+      }}
+    >
+      <Typography
+        color="text.secondary"
+        sx={{
+          fontSize: '0.74rem',
+          fontWeight: 500,
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          minWidth: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 0.8,
+          flexWrap: 'wrap'
+        }}
+      >
+        {children}
+      </Box>
+    </Stack>
+  );
+}
+
+DetailRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  children: PropTypes.node,
+  divider: PropTypes.bool
+};
+
+function ValuePill({ text, tone = 'success' }) {
+  const theme = useTheme();
+
+  const toneMap = {
+    success: {
+      border: alpha(theme.palette.success.main, 0.4),
+      background: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.18 : 0.1),
+      color: theme.palette.mode === 'dark' ? theme.palette.success.light : theme.palette.success.dark
+    },
+    warning: {
+      border: alpha(theme.palette.warning.main, 0.42),
+      background: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.18 : 0.1),
+      color: theme.palette.mode === 'dark' ? theme.palette.warning.light : '#c77700'
+    },
+    info: {
+      border: alpha(theme.palette.info.main, 0.32),
+      background: alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.18 : 0.1),
+      color: theme.palette.mode === 'dark' ? theme.palette.info.light : theme.palette.info.dark
+    }
+  };
+
+  const currentTone = toneMap[tone] || toneMap.success;
+
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 26,
+        px: 0.9,
+        borderRadius: '9px',
+        border: `1px solid ${currentTone.border}`,
+        backgroundColor: currentTone.background,
+        color: currentTone.color,
+        fontSize: '0.76rem',
+        fontWeight: 700,
+        lineHeight: 1.15,
+        whiteSpace: 'nowrap'
+      }}
+    >
+      {text}
+    </Box>
+  );
+}
+
+ValuePill.propTypes = {
+  text: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  tone: PropTypes.oneOf(['success', 'warning', 'info'])
+};
+
+function MetricPair({ label, value, tone = 'success', align = 'left' }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent={align === 'right' ? 'flex-end' : 'flex-start'}
+      spacing={0.75}
+      sx={{ minWidth: 0 }}
+    >
+      <Typography
+        color="text.secondary"
+        sx={{
+          fontSize: '0.74rem',
+          fontWeight: 500,
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {label}
+      </Typography>
+      <ValuePill text={value} tone={tone} />
+    </Stack>
+  );
+}
+
+MetricPair.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  tone: PropTypes.oneOf(['success', 'warning', 'info']),
+  align: PropTypes.oneOf(['left', 'right'])
+};
 
 export default function ModelCard({ model, provider, modelInfo, price, group, ownedbyIcon, type, formatPrice, onViewDetail }) {
   const theme = useTheme();
   const { t } = useTranslation();
 
-  const inputModalities = modelInfo ? parseJsonArray(modelInfo.input_modalities) : [];
-  const outputModalities = modelInfo ? parseJsonArray(modelInfo.output_modalities) : [];
-  const tags = modelInfo ? parseJsonArray(modelInfo.tags) : [];
   const isTimesBilling = type === 'times';
   const displayName = modelInfo?.name || model;
-  const billingStatusText = isTimesBilling ? '按次计费' : '按量计费';
-  const apiEndpoints = inferApiEndpoints({
-    model,
-    provider,
-    inputModalities,
-    outputModalities
-  });
-  const endpointTypes = Array.from(
-    new Map(
-      apiEndpoints.map((endpoint) => [
-        endpoint.protocol,
-        {
-          key: endpoint.protocol,
-          label:
-            endpoint.protocol === 'openai'
-              ? 'OpenAI'
-              : endpoint.protocol === 'gemini'
-                ? 'Gemini'
-                : endpoint.protocol === 'claude'
-                  ? 'Claude'
-                  : endpoint.protocol,
-          color: endpoint.color
-        }
-      ])
-    ).values()
-  );
-
-  const metaTags = [
-    ...inputModalities.slice(0, 2).map((modality) => ({
-      key: `input-${modality}`,
-      label: MODALITY_OPTIONS[modality]?.text || modality,
-      color: MODALITY_OPTIONS[modality]?.color || 'primary'
-    })),
-    ...outputModalities.slice(0, 2).map((modality) => ({
-      key: `output-${modality}`,
-      label: MODALITY_OPTIONS[modality]?.text || modality,
-      color: MODALITY_OPTIONS[modality]?.color || 'secondary'
-    })),
-    ...tags.slice(0, 2).map((tag) => ({
-      key: `tag-${tag}`,
-      label: tag,
-      color: tag === 'Hot' ? 'error' : 'default'
-    }))
-  ].slice(0, 4);
+  const detailText = modelInfo?.description?.trim() || model;
+  const billingStatusText = isTimesBilling ? t('modelpricePage.times') : t('modelpricePage.tokens');
+  const groupName = group?.name || t('modelpricePage.noneGroup');
+  const groupRatio = group?.ratio ?? null;
+  const billingTone = isTimesBilling
+    ? {
+        color: theme.palette.mode === 'dark' ? theme.palette.warning.light : '#c77700',
+        dot: theme.palette.warning.main
+      }
+    : {
+        color: theme.palette.mode === 'dark' ? theme.palette.success.light : theme.palette.success.dark,
+        dot: theme.palette.success.main
+      };
+  const headerGradient =
+    theme.palette.mode === 'dark'
+      ? `linear-gradient(135deg, ${alpha('#1f6f78', 0.32)} 0%, ${alpha('#1d4f59', 0.24)} 45%, ${alpha('#334155', 0.34)} 100%)`
+      : `linear-gradient(135deg, ${alpha('#f7fbf7', 0.98)} 0%, ${alpha('#e5f7ef', 0.98)} 42%, ${alpha('#eef7fb', 0.98)} 100%)`;
+  const cardBorder = theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : alpha('#0f172a', 0.08);
 
   return (
     <Card
       onClick={onViewDetail}
       sx={{
         height: '100%',
-        p: 1.35,
-        borderRadius: '16px',
-        border: 'none',
-        boxShadow: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '18px',
+        overflow: 'hidden',
+        border: `1px solid ${cardBorder}`,
+        boxShadow: theme.palette.mode === 'dark' ? '0 16px 36px rgba(0,0,0,0.22)' : '0 14px 34px rgba(15,23,42,0.08)',
         cursor: 'pointer',
-        transition: 'box-shadow 0.18s ease, transform 0.18s ease, background-color 0.18s ease',
-        backgroundColor:
-          theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.72) : alpha(theme.palette.background.paper, 0.98),
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
+        backgroundColor: theme.palette.background.paper,
         '&:hover': {
-          boxShadow: theme.palette.mode === 'dark' ? '0 12px 24px rgba(0,0,0,0.26)' : '0 10px 24px rgba(15,23,42,0.08)',
-          transform: 'translateY(-2px)'
+          transform: 'translateY(-3px)',
+          borderColor: alpha(theme.palette.primary.main, 0.22),
+          boxShadow: theme.palette.mode === 'dark' ? '0 20px 42px rgba(0,0,0,0.28)' : '0 20px 42px rgba(15,23,42,0.12)'
         }
       }}
     >
-      <Stack direction="row" justifyContent="space-between" spacing={1.25}>
-        <Stack direction="row" spacing={1.25} sx={{ minWidth: 0, flex: 1 }}>
-          <Avatar
-            src={ownedbyIcon}
-            alt={provider}
-            sx={{
-              width: 40,
-              height: 40,
-              bgcolor: theme.palette.background.paper,
-              border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-              boxShadow: theme.palette.mode === 'dark' ? '0 4px 10px rgba(0,0,0,0.28)' : '0 4px 10px rgba(15,23,42,0.12)',
-              '.MuiAvatar-img': {
-                objectFit: 'contain',
-                p: '5px'
-              }
-            }}
-          >
-            {provider?.charAt(0).toUpperCase()}
-          </Avatar>
+      <Box
+        sx={{
+          px: 2.1,
+          py: 1.9,
+          background: headerGradient,
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.75)}`
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" spacing={1.5}>
+          <Stack direction="row" spacing={1.25} sx={{ minWidth: 0, flex: 1 }}>
+            <Avatar
+              src={ownedbyIcon}
+              alt={provider}
+              sx={{
+                width: 42,
+                height: 42,
+                bgcolor: alpha(theme.palette.background.paper, 0.96),
+                border: `1px solid ${alpha(theme.palette.common.white, theme.palette.mode === 'dark' ? 0.08 : 0.7)}`,
+                boxShadow: theme.palette.mode === 'dark' ? '0 6px 18px rgba(0,0,0,0.2)' : '0 6px 14px rgba(15,23,42,0.08)',
+                '.MuiAvatar-img': {
+                  objectFit: 'contain',
+                  p: '6px'
+                }
+              }}
+            >
+              {provider?.charAt(0).toUpperCase()}
+            </Avatar>
 
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" alignItems="center">
+            <Box sx={{ minWidth: 0, flex: 1 }}>
               <Tooltip title={displayName}>
                 <Typography
-                  variant="h5"
                   sx={{
-                    fontWeight: 700,
+                    fontSize: '1.06rem',
+                    fontWeight: 800,
                     lineHeight: 1.1,
-                    fontSize: '1.25rem',
+                    color: theme.palette.text.primary,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
@@ -118,26 +222,22 @@ export default function ModelCard({ model, provider, modelInfo, price, group, ow
                   {displayName}
                 </Typography>
               </Tooltip>
-            </Stack>
-
-            <Stack direction="row" spacing={1.25} useFlexGap flexWrap="wrap" alignItems="center" sx={{ mt: 0.45 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.78rem' }}>
-                {t('modelpricePage.input')}{' '}
-                <span style={{ color: theme.palette.warning.main, fontWeight: 700, fontSize: '0.86rem' }}>
-                  {formatPrice(price.input, type)}
-                </span>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  mt: 0.28,
+                  fontSize: '0.78rem',
+                  lineHeight: 1.2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {provider}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.78rem' }}>
-                {t('modelpricePage.output')}{' '}
-                <span style={{ color: theme.palette.warning.main, fontWeight: 700, fontSize: '0.86rem' }}>
-                  {formatPrice(price.output, type)}
-                </span>
-              </Typography>
-            </Stack>
-          </Box>
-        </Stack>
+            </Box>
+          </Stack>
 
-        <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
           <Tooltip title={t('modelpricePage.copyModelId')}>
             <IconButton
               size="small"
@@ -146,119 +246,135 @@ export default function ModelCard({ model, provider, modelInfo, price, group, ow
                 copy(model, t('modelpricePage.modelId'));
               }}
               sx={{
-                width: 30,
-                height: 30,
-                border: `1px solid ${theme.palette.mode === 'dark' ? alpha('#fff', 0.12) : alpha('#64748b', 0.22)}`,
-                color: theme.palette.text.secondary
+                mt: 0.15,
+                width: 34,
+                height: 34,
+                color: alpha(theme.palette.text.primary, 0.72),
+                backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.12 : 0.42),
+                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.18 : 0.7)
+                }
               }}
             >
-              <Icon icon="eva:copy-outline" width={16} height={16} />
+              <Icon icon="eva:copy-outline" width={17} height={17} />
             </IconButton>
           </Tooltip>
         </Stack>
-      </Stack>
+      </Box>
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
+      <Box
         sx={{
-          mt: 1.1,
-          fontSize: '0.82rem',
-          lineHeight: 1.55,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          minHeight: 40
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          px: 2.1,
+          py: 1.45
         }}
       >
-        {modelInfo?.description || model}
-      </Typography>
-
-      {endpointTypes.length > 0 && (
-        <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap" sx={{ mt: 1.15 }}>
-          {endpointTypes.map((endpoint) => (
-            <Label
-              key={endpoint.key}
-              variant="soft"
-              color={endpoint.color}
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.55,
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.9,
-                borderRadius: '999px'
-              }}
-            >
-              <Icon icon="eva:link-2-outline" width={12} height={12} />
-              {endpoint.label}
-            </Label>
-          ))}
-        </Stack>
-      )}
-
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mt: 1.25 }}>
-        <Stack direction="row" spacing={0.6} useFlexGap flexWrap="wrap" sx={{ minWidth: 0, flex: 1 }}>
-          {metaTags.map((item) => (
-            <Label
-              key={item.key}
-              variant="soft"
-              color={item.color}
-              sx={{
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.75,
-                borderRadius: '999px'
-              }}
-            >
-              {item.label}
-            </Label>
-          ))}
-
-          {group?.ratio > 1 && (
-            <Label
-              variant="soft"
-              color={group.ratio > 1 ? 'warning' : 'info'}
-              sx={{
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.75,
-                borderRadius: '999px'
-              }}
-            >
-              x{group.ratio}
-            </Label>
-          )}
-        </Stack>
+        <Box
+          sx={{
+            pt: 0.2,
+            pb: 0.9,
+            borderBottom: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Typography
+            sx={{
+              color: theme.palette.mode === 'dark' ? alpha(theme.palette.text.primary, 0.84) : alpha(theme.palette.text.primary, 0.78),
+              fontSize: '0.82rem',
+              lineHeight: 1.6,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: '2.3em'
+            }}
+          >
+            {detailText}
+          </Typography>
+        </Box>
 
         <Box
           sx={{
-            flexShrink: 0,
-            display: 'inline-flex',
+            py: 0.88,
+            display: 'flex',
             alignItems: 'center',
-            gap: 0.6,
-            px: 1,
-            py: 0.55,
-            borderRadius: '999px',
-            bgcolor: alpha(theme.palette.success.main, 0.12),
-            color: theme.palette.text.secondary,
-            fontSize: '0.76rem',
-            fontWeight: 700
+            justifyContent: 'space-between',
+            gap: 1.5
           }}
         >
           <Box
             sx={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              bgcolor: theme.palette.success.main
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.55,
+              color: billingTone.color,
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              lineHeight: 1.1,
+              whiteSpace: 'nowrap',
+              minWidth: 0
             }}
-          />
-          {billingStatusText}
+          >
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                backgroundColor: billingTone.dot,
+                flexShrink: 0
+              }}
+            />
+            {billingStatusText}
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1.25, minWidth: 0, flex: 1 }}>
+            <MetricPair label={t('modelpricePage.input')} value={formatPrice(price.input, type)} tone="success" align="right" />
+            <MetricPair label={t('modelpricePage.output')} value={formatPrice(price.output, type)} tone="warning" align="right" />
+          </Box>
         </Box>
-      </Stack>
+
+        <DetailRow label={t('modelpricePage.currentUserGroup')} divider={false}>
+          <ValuePill text={groupName} tone="info" />
+          {groupRatio !== null ? <ValuePill text={`x${groupRatio}`} tone="info" /> : null}
+        </DetailRow>
+
+        <Box sx={{ mt: 'auto', pt: 2 }}>
+          <Box
+            component="button"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onViewDetail();
+            }}
+            sx={{
+              width: '100%',
+              height: 38,
+              border: 'none',
+              borderRadius: '11px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              bgcolor: theme.palette.mode === 'dark' ? alpha('#0f172a', 0.88) : '#1f2937',
+              color: '#fff',
+              fontSize: '0.86rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'transform 0.16s ease, background-color 0.16s ease',
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                bgcolor: theme.palette.mode === 'dark' ? alpha('#0b1220', 0.96) : '#111827'
+              }
+            }}
+          >
+            {t('modelpricePage.viewDetail')}
+            <Icon icon="eva:arrow-forward-outline" width={18} height={18} />
+          </Box>
+        </Box>
+      </Box>
     </Card>
   );
 }
