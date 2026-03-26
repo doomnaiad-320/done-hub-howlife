@@ -616,6 +616,8 @@
     "search": "Search model name or description",
     "times": "Pay per call",
     "tokens": "Pay per token",
+    "timesShort": "Per call",
+    "tokensShort": "Per token",
     "perRequestSuffix": " / request",
     "type": "Type",
     "input_audio_tokens": "Audio Input Ratio",

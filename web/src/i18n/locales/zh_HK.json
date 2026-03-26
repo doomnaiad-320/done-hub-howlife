@@ -570,6 +570,8 @@
     "search": "搜尋",
     "times": "按次付費",
     "tokens": "按量付費",
+    "timesShort": "按次",
+    "tokensShort": "按量",
     "perRequestSuffix": "/次請求",
     "type": "類型",
     "input_audio_tokens": "音頻輸入倍率",

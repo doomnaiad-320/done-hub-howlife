@@ -722,6 +722,8 @@
     "search": "搜索模型名称或描述",
     "tokens": "按量付费",
     "times": "按次付费",
+    "tokensShort": "按量",
+    "timesShort": "按次",
     "perRequestSuffix": "/次请求",
     "all": "全部",
     "price": "价格",

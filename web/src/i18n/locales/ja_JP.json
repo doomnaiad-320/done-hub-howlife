@@ -566,6 +566,8 @@
     "search": "検索",
     "times": "回数制課金",
     "tokens": "量に応じて支払う",
+    "timesShort": "回数制",
+    "tokensShort": "従量",
     "perRequestSuffix": " / リクエスト",
     "type": "タイプ",
     "input_audio_tokens": "オーディオ入力倍率",
