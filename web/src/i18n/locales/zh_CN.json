@@ -29,6 +29,7 @@
   "log": "日志",
   "redemption": "兑换",
   "topup": "充值",
+  "finance": "财务",
   "user": "用户",
   "user_group": "用户分组",
   "profile": "个人设置",
@@ -510,8 +511,8 @@
     "delTip": "是否删除兑换码"
   },
   "topupPage": {
-    "alertMessage": "下方已展示最近的充值记录和兑换记录，可直接查看到账情况。",
-    "recordsTitle": "充值与兑换记录",
+    "alertMessage": "此页面用于在线充值和兑换码充值，充值记录与兑换记录已迁移到财务页面。",
+    "recordsTitle": "财务记录",
     "refresh": "刷新",
     "rechargeLogs": "充值记录",
     "redemptionLogs": "兑换记录",
@@ -790,6 +791,7 @@
   },
   "paymentPage": {
     "orderList": "订单列表",
+    "invoiceApplications": "开票申请",
     "gatewaySettings": "网关设置"
   },
   "paymentGatewayPage": {

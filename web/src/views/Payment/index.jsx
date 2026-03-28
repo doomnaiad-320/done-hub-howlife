@@ -4,6 +4,7 @@ import { Tabs, Tab, Box, Card } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import Gateway from './Gateway';
 import Order from './Order';
+import InvoiceApplication from './InvoiceApplication';
 import AdminContainer from 'ui-component/AdminContainer';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -38,7 +39,8 @@ const Payment = () => {
   const tabMap = useMemo(
     () => ({
       order: 0,
-      gateway: 1
+      invoice: 1,
+      gateway: 2
     }),
     []
   );
@@ -69,13 +71,17 @@ const Payment = () => {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto">
                 <Tab label={t('paymentPage.orderList')} {...a11yProps(0)} />
-                <Tab label={t('paymentPage.gatewaySettings')} {...a11yProps(1)} />
+                <Tab label={t('paymentPage.invoiceApplications')} {...a11yProps(1)} />
+                <Tab label={t('paymentPage.gatewaySettings')} {...a11yProps(2)} />
               </Tabs>
             </Box>
             <CustomTabPanel value={value} index={0}>
               <Order />
             </CustomTabPanel>
             <CustomTabPanel value={value} index={1}>
+              <InvoiceApplication />
+            </CustomTabPanel>
+            <CustomTabPanel value={value} index={2}>
               <Gateway />
             </CustomTabPanel>
           </Box>

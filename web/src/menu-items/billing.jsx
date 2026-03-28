@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 
 const icons = {
   IconCreditCard: () => <Icon width={20} icon="solar:card-bold-duotone" />,
+  IconWallet: () => <Icon width={20} icon="solar:wallet-money-bold-duotone" />,
   IconBrandGithubCopilot: () => <Icon width={20} icon="solar:box-minimalistic-bold-duotone" />
 };
 
@@ -16,6 +17,14 @@ const Billing = {
       type: 'item',
       url: '/panel/topup',
       icon: icons.IconCreditCard,
+      breadcrumbs: false
+    },
+    {
+      id: 'finance',
+      title: '财务',
+      type: 'item',
+      url: '/panel/finance',
+      icon: icons.IconWallet,
       breadcrumbs: false
     },
     {

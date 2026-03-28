@@ -734,6 +734,7 @@
     "title": "Payment Gateway"
   },
   "paymentPage": {
+    "invoiceApplications": "Invoice Applications",
     "gatewaySettings": "Gateway Settings",
     "orderList": "Order List"
   },
@@ -763,6 +764,7 @@
   },
   "playground": "Playground",
   "pricing": "Pricing",
+  "finance": "Finance",
   "pricingPage": {
     "ModelCount": "Number of models",
     "currencyInfo1": "USD",
@@ -1436,8 +1438,8 @@
     "topupsuccess": "Top up successful!"
   },
   "topupPage": {
-    "alertMessage": "Recent recharge and redemption records are shown below for quick review.",
-    "recordsTitle": "Recharge & Redemption Records",
+    "alertMessage": "This page is for online top-up and redemption. Recharge and redemption records have been moved to Finance.",
+    "recordsTitle": "Finance Records",
     "refresh": "Refresh",
     "rechargeLogs": "Recharge Records",
     "redemptionLogs": "Redemption Records",
