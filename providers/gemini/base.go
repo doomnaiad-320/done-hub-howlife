@@ -68,7 +68,7 @@ type GeminiProvider struct {
 func getConfig(version string) base.ProviderConfig {
 	return base.ProviderConfig{
 		BaseURL:           "https://generativelanguage.googleapis.com",
-		ChatCompletions:   fmt.Sprintf("/%s/chat/completions", version),
+		ChatCompletions:   fmt.Sprintf("/%s/openai/chat/completions", version),
 		ModelList:         "/models",
 		ImagesGenerations: "1",
 	}

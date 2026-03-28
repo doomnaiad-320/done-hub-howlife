@@ -126,7 +126,7 @@ export function ChannelCheck({ item, open, onClose }) {
         }
       );
 
-      if (response.status !== 200) {
+      if (!response || response.status !== 200) {
         showError(response.data?.message || '检测失败');
         return;
       }

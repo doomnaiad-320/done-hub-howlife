@@ -168,19 +168,19 @@ const useLogin = () => {
     }
   }, [dispatch]);
 
-  const loadUserGroup = useCallback(() => {
+  const loadUserGroup = useCallback(async () => {
     try {
-      API.get('/api/user_group_map').then((res) => {
-        const { success, data } = res.data;
-        if (success) {
-          dispatch({ type: SET_USER_GROUP, payload: data });
-        }
-      });
+      const res = await LoginCheckAPI.get('/api/user_group_map');
+      const { success, data } = res.data;
+      if (success) {
+        dispatch({ type: SET_USER_GROUP, payload: data });
+        return data;
+      }
     } catch (error) {
-      console.error(error);
+      return [];
     }
     return [];
-  }, []);
+  }, [dispatch]);
 
   return { login, logout, githubLogin, wechatLogin, larkLogin, oidcLogin, linuxDoLogin, loadUser, loadUserGroup };
 };

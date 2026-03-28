@@ -83,7 +83,7 @@ const StatusProvider = ({ children }) => {
 
   const loadOwnedby = useCallback(async () => {
     try {
-      const res = await API.get('/api/model_ownedby');
+      const res = await API.get('/api/model_ownedby/');
       const { success, data } = res.data;
       if (success) {
         dispatch({ type: SET_MODEL_OWNEDBY, payload: data });

@@ -32,7 +32,8 @@ export function getSnackbarOptions(variant) {
 export function showError(error) {
   if (error.message) {
     if (error.name === 'AxiosError') {
-      switch (error.response.status) {
+      const status = error.response?.status;
+      switch (status) {
         case 429:
           enqueueSnackbar('错误：请求次数过多，请稍后再试！', getSnackbarOptions('ERROR'));
           break;
