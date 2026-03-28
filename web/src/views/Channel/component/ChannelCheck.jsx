@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -13,10 +14,11 @@ import {
   Typography,
   DialogTitle,
   DialogContent,
-  FormControlLabel
+  FormControlLabel,
+  Tooltip
 } from '@mui/material';
 import { API } from 'utils/api';
-import { showError } from 'utils/common';
+import { showError, showInfo, showSuccess } from 'utils/common';
 
 import { Icon } from '@iconify/react';
 
@@ -28,14 +30,57 @@ export function ChannelCheck({ item, open, onClose }) {
   const [checkResults, setCheckResults] = useState([]);
   const [expandedResponses, setExpandedResponses] = useState({});
   const [expandedModels, setExpandedModels] = useState({});
+  const [runningModels, setRunningModels] = useState([]);
+
+  const normalizeModelList = (models) => {
+    if (!models) {
+      return [];
+    }
+
+    if (typeof models === 'string') {
+      return models
+        .split(',')
+        .map((model) => model.trim())
+        .filter(Boolean);
+    }
+
+    if (Array.isArray(models)) {
+      return models
+        .map((model) => {
+          if (typeof model === 'string') {
+            return model.trim();
+          }
+          return model?.id?.trim?.() || '';
+        })
+        .filter(Boolean);
+    }
+
+    return [];
+  };
+
+  const formatDuration = (durationMs) => {
+    if (!durationMs || durationMs <= 0) {
+      return '-';
+    }
+
+    if (durationMs < 1000) {
+      return `${durationMs.toFixed(0)} ms`;
+    }
+
+    return `${(durationMs / 1000).toFixed(2)} s`;
+  };
 
   useEffect(() => {
-    if (item?.models) {
-      const initialModels = item.models.split(',');
+    if (open && item?.models) {
+      const initialModels = normalizeModelList(item.models);
       setModelList(initialModels);
       setSelectedModels(initialModels);
+      setCheckResults([]);
+      setExpandedResponses({});
+      setExpandedModels({});
+      setRunningModels([]);
     }
-  }, [item?.models]);
+  }, [item?.models, open]);
 
   const handleSelectAll = () => {
     setSelectedModels(modelList);
@@ -74,6 +119,7 @@ export function ChannelCheck({ item, open, onClose }) {
 
         const uniqueModels = [...new Set(filteredModels)];
         setModelList(uniqueModels);
+        setSelectedModels((prev) => prev.filter((model) => uniqueModels.includes(model)));
       } else {
         showError(message || '获取模型失败');
       }
@@ -83,57 +129,130 @@ export function ChannelCheck({ item, open, onClose }) {
     setProviderModelsLoad(false);
   };
 
-  const handleCheck = async () => {
-    setCheckLoad(true);
-    setCheckResults([]);
+  const getResultByModel = (model) => checkResults.find((result) => result.model === model);
+
+  const runCheck = async (modelsToCheck, replaceAll = false) => {
+    if (!item?.id) {
+      showError('请先保存渠道后再测试模型');
+      return;
+    }
+
+    if (!modelsToCheck.length) {
+      return;
+    }
+
+    const latestResults = new Map();
+    if (replaceAll) {
+      setCheckLoad(true);
+      setCheckResults([]);
+    } else {
+      setCheckResults((prev) => prev.filter((result) => !modelsToCheck.includes(result.model)));
+    }
+
     try {
-      const response = await API.post(
-        `/api/sse/channel/check`,
-        {
-          id: item.id,
-          models: selectedModels.join(',')
-        },
-        {
-          responseType: 'text',
-          onDownloadProgress: (progressEvent) => {
-            const text = progressEvent.currentTarget.response;
-            const lines = text.split('\n');
+      for (const model of modelsToCheck) {
+        setRunningModels([model]);
 
-            lines.forEach((line) => {
-              if (line.trim() === '' || !line.startsWith('data:')) return;
+        try {
+          const response = await API.get(`/api/channel/test/${item.id}`, {
+            params: {
+              model
+            }
+          });
 
-              const jsonStr = line.slice(5);
-              try {
-                const eventData = JSON.parse(jsonStr);
-                if (eventData.type === 'result') {
-                  setCheckResults((prev) => {
-                    const existingIndex = prev.findIndex((item2) => item2.model === eventData.data.model);
-
-                    if (existingIndex !== -1) {
-                      const newResults = [...prev];
-                      newResults[existingIndex] = eventData.data;
-                      return newResults;
-                    }
-
-                    return [...prev, eventData.data];
-                  });
-                }
-              } catch (e) {
-                // 忽略解析错误
+          const { success, message, time } = response.data;
+          const result = {
+            model,
+            duration_ms: (time || 0) * 1000,
+            process: [
+              {
+                name: '测速结果',
+                results: [
+                  {
+                    name: '响应',
+                    status: success ? 1 : 0,
+                    remark: message || (success ? '测速成功' : '测速失败')
+                  }
+                ],
+                response: response.data
               }
-            });
+            ]
+          };
+
+          latestResults.set(model, result);
+          setCheckResults((prev) => {
+            const existingIndex = prev.findIndex((item2) => item2.model === model);
+
+            if (existingIndex !== -1) {
+              const newResults = [...prev];
+              newResults[existingIndex] = result;
+              return newResults;
+            }
+
+            return [...prev, result];
+          });
+        } catch (error) {
+          const result = {
+            model,
+            duration_ms: 0,
+            process: [
+              {
+                name: '测速结果',
+                results: [
+                  {
+                    name: '响应',
+                    status: 0,
+                    remark: error.message || '测速失败'
+                  }
+                ],
+                response: null
+              }
+            ]
+          };
+
+          latestResults.set(model, result);
+          setCheckResults((prev) => {
+            const existingIndex = prev.findIndex((item2) => item2.model === model);
+
+            if (existingIndex !== -1) {
+              const newResults = [...prev];
+              newResults[existingIndex] = result;
+              return newResults;
+            }
+
+            return [...prev, result];
+          });
+        }
+      }
+
+      if (modelsToCheck.length === 1) {
+        const model = modelsToCheck[0];
+        const result = latestResults.get(model);
+        if (result) {
+          const status = getModelStatus(result);
+          const duration = formatDuration(result.duration_ms);
+          if (status.success) {
+            showSuccess(`${model} 测试成功，耗时 ${duration}`);
+          } else {
+            showError(`${model} 测试失败，耗时 ${duration}`);
           }
         }
-      );
-
-      if (!response || response.status !== 200) {
-        showError(response.data?.message || '检测失败');
-        return;
+      } else if (replaceAll) {
+        const results = modelsToCheck.map((model) => latestResults.get(model)).filter(Boolean);
+        const successCount = results.filter((result) => getModelStatus(result).success).length;
+        const failedCount = results.length - successCount;
+        showInfo(`模型测试完成：成功 ${successCount}，失败 ${failedCount}`);
       }
     } catch (error) {
       showError(error.message);
+    } finally {
+      setRunningModels([]);
+      setCheckLoad(false);
     }
-    setCheckLoad(false);
+  };
+
+  const handleCheck = async () => {
+    await runCheck(selectedModels, true);
   };
 
   const toggleResponse = (modelIndex, processIndex) => {
@@ -193,15 +312,15 @@ export function ChannelCheck({ item, open, onClose }) {
             <Button
               variant="contained"
               onClick={() => getProviderModels(item)}
-              disabled={providerModelsLoad}
+              disabled={providerModelsLoad || runningModels.length > 0}
               startIcon={<Icon icon="solar:refresh-bold" />}
             >
               获取可用模型
             </Button>
-            <Button onClick={handleSelectAll} startIcon={<Icon icon="solar:check-square-bold" />}>
+            <Button onClick={handleSelectAll} startIcon={<Icon icon="solar:check-square-bold" />} disabled={runningModels.length > 0}>
               全选
             </Button>
-            <Button onClick={handleUnselectAll} startIcon={<Icon icon="solar:square-bold" />}>
+            <Button onClick={handleUnselectAll} startIcon={<Icon icon="solar:square-bold" />} disabled={runningModels.length > 0}>
               反选
             </Button>
           </Stack>
@@ -214,14 +333,76 @@ export function ChannelCheck({ item, open, onClose }) {
               bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'grey.50')
             }}
           >
-            {modelList.map((model) => (
-              <FormControlLabel
-                key={model}
-                control={<Checkbox checked={selectedModels.includes(model)} onChange={() => handleModelToggle(model)} />}
-                label={model}
-                sx={{ mr: 3, mb: 1 }}
-              />
-            ))}
+            <Stack spacing={1.5}>
+              {modelList.map((model) => {
+                const hasResult = checkResults.some((result) => result.model === model);
+                const isRunning = runningModels.includes(model);
+                const result = getResultByModel(model);
+                const status = result ? getModelStatus(result) : null;
+
+                return (
+                  <Stack
+                    key={model}
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'background.paper')
+                    }}
+                  >
+                    <FormControlLabel
+                      sx={{ m: 0, flex: 1 }}
+                      control={
+                        <Checkbox
+                          checked={selectedModels.includes(model)}
+                          onChange={() => handleModelToggle(model)}
+                          disabled={runningModels.length > 0}
+                        />
+                      }
+                      label={model}
+                    />
+                    <Tooltip title={!item?.id ? '请先保存渠道后再测试模型' : ''}>
+                      <span>
+                        <LoadingButton
+                          size="small"
+                          variant={hasResult ? 'outlined' : 'contained'}
+                          loading={isRunning}
+                          disabled={!item?.id || runningModels.length > 0}
+                          onClick={() => runCheck([model])}
+                        >
+                          测试
+                        </LoadingButton>
+                      </span>
+                    </Tooltip>
+                    {status && (
+                      <Box
+                        sx={{
+                          minWidth: 132,
+                          py: 0.5,
+                          px: 1.25,
+                          borderRadius: 1,
+                          bgcolor: () => alpha(status.color, 0.1),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 0.75
+                        }}
+                      >
+                        <Icon icon={status.icon} width={16} sx={{ color: status.color }} />
+                        <Typography variant="caption" sx={{ color: status.color, fontWeight: 600 }}>
+                          {status.success ? '成功' : '失败'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {formatDuration(result.duration_ms)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                );
+              })}
+            </Stack>
           </Paper>
 
           <LoadingButton
@@ -229,7 +410,7 @@ export function ChannelCheck({ item, open, onClose }) {
             variant="contained"
             onClick={handleCheck}
             loading={checkLoad}
-            disabled={selectedModels.length === 0}
+            disabled={selectedModels.length === 0 || runningModels.length > 0}
             sx={{ height: 48 }}
           >
             开始检测
@@ -250,6 +431,10 @@ export function ChannelCheck({ item, open, onClose }) {
                   <Icon icon={expandedModels[modelIndex] ? 'solar:arrow-down-bold' : 'solar:arrow-right-bold'} />
                   <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 500 }}>
                     {result.model}
+                  </Typography>
+
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                    耗时 {formatDuration(result.duration_ms)}
                   </Typography>
 
                   <Box
@@ -369,3 +554,9 @@ export function ChannelCheck({ item, open, onClose }) {
     </Dialog>
   );
 }
+
+ChannelCheck.propTypes = {
+  item: PropTypes.object,
+  open: PropTypes.bool,
+  onClose: PropTypes.func
+};

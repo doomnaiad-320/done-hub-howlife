@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,8 +28,9 @@ type CheckChannel struct {
 }
 
 type ModelResult struct {
-	Model   string                `json:"model"`
-	Process []*CheckProcessResult `json:"process"`
+	Model      string                `json:"model"`
+	Process    []*CheckProcessResult `json:"process"`
+	DurationMs float64               `json:"duration_ms"`
 }
 
 type CheckProcessResult struct {
@@ -97,6 +99,7 @@ func (c *CheckChannel) Run() ([]*ModelResult, error) {
 	results := make([]*ModelResult, 0)
 
 	for _, model := range c.Models {
+		startTime := time.Now()
 		process := getProcess(model)
 		modelResult := &ModelResult{
 			Model:   model,
@@ -119,6 +122,7 @@ func (c *CheckChannel) Run() ([]*ModelResult, error) {
 
 			modelResult.Process = append(modelResult.Process, processResult)
 		}
+		modelResult.DurationMs = float64(time.Since(startTime).Milliseconds())
 		results = append(results, modelResult)
 	}
 	return results, nil
@@ -158,6 +162,7 @@ func (c *CheckChannel) RunStream(resultChan chan<- *ModelResult, doneChan chan<-
 	defer close(doneChan)
 
 	for _, model := range c.Models {
+		startTime := time.Now()
 		process := getProcess(model)
 		modelResult := &ModelResult{
 			Model:   model,
@@ -181,6 +186,7 @@ func (c *CheckChannel) RunStream(resultChan chan<- *ModelResult, doneChan chan<-
 
 			modelResult.Process = append(modelResult.Process, processResult)
 		}
+		modelResult.DurationMs = float64(time.Since(startTime).Milliseconds())
 
 		// 每完成一个模型的检查就发送结果
 		resultChan <- modelResult

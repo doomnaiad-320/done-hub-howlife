@@ -25,9 +25,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
-  Menu,
   MenuItem,
-  MenuList,
   Popover,
   Stack,
   Switch,
@@ -47,49 +45,11 @@ import Label from 'ui-component/Label'
 import ResponseTimeLabel from './ResponseTimeLabel'
 import GroupLabel from './GroupLabel'
 
-import { alpha, styled } from '@mui/material/styles'
 import { Icon } from '@iconify/react'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import { ChannelCheck } from './ChannelCheck'
 import { getPageSize, PAGE_SIZE_OPTIONS, savePageSize } from 'constants'
-
-const StyledMenu = styled((props) => (
-  <Menu
-    elevation={0}
-    anchorOrigin={{
-      vertical: 'bottom',
-      horizontal: 'right'
-    }}
-    transformOrigin={{
-      vertical: 'top',
-      horizontal: 'right'
-    }}
-    {...props}
-  />
-))(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: 6,
-    marginTop: theme.spacing(1),
-    minWidth: 180,
-    color: theme.palette.mode === 'light' ? 'rgb(55, 65, 81)' : theme.palette.grey[300],
-    boxShadow:
-      'rgb(255, 255, 255) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px',
-    '& .MuiMenu-list': {
-      padding: '4px 0'
-    },
-    '& .MuiMenuItem-root': {
-      '& .MuiSvgIcon-root': {
-        fontSize: 18,
-        color: theme.palette.text.secondary,
-        marginRight: theme.spacing(1.5)
-      },
-      '&:active': {
-        backgroundColor: alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity)
-      }
-    }
-  }
-}))
 
 function statusInfo(t, status) {
   switch (status) {
@@ -117,10 +77,7 @@ export default function ChannelTableRow({
   const { t } = useTranslation()
   const popover = usePopover()
   const confirmDelete = useBoolean()
-  const check = useBoolean()
-  const updateBalanceOption = useBoolean()
 
-  const [openTest, setOpenTest] = useState(false)
   // const [openDelete, setOpenDelete] = useState(false);
   const [openCheck, setOpenCheck] = useState(false)
   const [statusSwitch, setStatusSwitch] = useState(item.status)
@@ -138,7 +95,6 @@ export default function ChannelTableRow({
   const [currentTestingChannel, setCurrentTestingChannel] = useState(null)
   const [tagPage, setTagPage] = useState(0)
   const [tagRowsPerPage, setTagRowsPerPage] = useState(() => getPageSize('channelTag'))
-  const tagModelPopover = usePopover()
 
   const batchConfirm = useBoolean()
 
@@ -224,34 +180,6 @@ export default function ChannelTableRow({
     setTagChannels((prev) => prev.map((c) => (c.id === channelId ? { ...c, priority: value } : c)))
   }
 
-  const handleTagChannelTest = async(channel) => {
-    const models = channel.models.split(',')
-    if (models.length === 1) {
-      // 如果只有一个模型，直接测速
-      const testModel = models[0]
-      const { success, time } = await manageChannel(channel.id, 'test', testModel)
-      if (success) {
-        showInfo(t('channel_row.modelTestSuccess', { channel: channel.name, model: testModel, time: time.toFixed(2) }))
-        // 更新本地状态
-        setTagChannels((prev) =>
-          prev.map((c) =>
-            c.id === channel.id
-              ? {
-                ...c,
-                test_time: Date.now() / 1000,
-                response_time: time * 1000
-              }
-              : c
-          )
-        )
-      }
-    } else {
-      // 多个模型，显示模型列表
-      setCurrentTestingChannel(channel)
-      tagModelPopover.onOpen()
-    }
-  }
-
   const handleBatchDelete = async() => {
     if (!selectedChannels.length) {
       showError(t('channel_row.batchAddIDRequired'))
@@ -284,10 +212,6 @@ export default function ChannelTableRow({
     }
   }, [openRow, item.tag, fetchTagChannels])
 
-  const handleTestModel = (event) => {
-    setOpenTest(event.currentTarget)
-  }
-
   const handleDeleteRow = useCallback(async() => {
     if (deleting) return
 
@@ -307,24 +231,6 @@ export default function ChannelTableRow({
     }
   }
 
-  const handleResponseTime = async(modelName) => {
-    setOpenTest(null)
-
-    if (typeof modelName !== 'string') {
-      modelName = item.test_model
-    }
-
-    if (modelName == '') {
-      showError(t('channel_row.modelTestTip'))
-      return
-    }
-    const { success, time } = await manageChannel(item.id, 'test', modelName)
-    if (success) {
-      setResponseTimeData({ test_time: Date.now() / 1000, response_time: time * 1000 })
-      showInfo(t('channel_row.modelTestSuccess', { channel: item.name, model: modelName, time: time.toFixed(2) }))
-    }
-  }
-
   const updateChannelBalance = async() => {
     try {
       const res = await API.get(`/api/channel/update_balance/${item.id}`)
@@ -337,7 +243,7 @@ export default function ChannelTableRow({
         showError(message)
       }
     } catch (error) {
-
+      showError(error.message)
     }
   }
 
@@ -469,7 +375,10 @@ export default function ChannelTableRow({
             <ResponseTimeLabel
               test_time={responseTimeData.test_time}
               response_time={responseTimeData.response_time}
-              handle_action={handleResponseTime}
+              handle_action={() => {
+                setCurrentTestingChannel(null)
+                setOpenCheck(true)
+              }}
             />
           )}
         </TableCell>
@@ -593,16 +502,18 @@ export default function ChannelTableRow({
         <TableCell>
           <Stack direction="row" justifyContent="right" alignItems="right" spacing={1}>
             {!item.tag && (
-              <IconButton
-                size="small"
-                onClick={handleTestModel}
-                aria-controls={openTest ? 'test-model-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={openTest ? 'true' : undefined}
-                sx={{ color: 'info.main' }}
-              >
-                <Icon icon="mdi:speedometer"/>
-              </IconButton>
+              <Tooltip title={t('channel_row.check')} placement="top" arrow>
+                <IconButton
+                  onClick={() => {
+                    setCurrentTestingChannel(null)
+                    setOpenCheck(true)
+                  }}
+                  size="small"
+                  sx={{ color: 'info.main' }}
+                >
+                  <Icon icon="solar:checklist-minimalistic-bold"/>
+                </IconButton>
+              </Tooltip>
             )}
 
             <Tooltip title={t('common.edit')} placement="top" arrow>
@@ -611,7 +522,13 @@ export default function ChannelTableRow({
               </IconButton>
             </Tooltip>
             {!item.tag && (
-              <IconButton onClick={popover.onOpen} size="small">
+              <IconButton
+                onClick={(event) => {
+                  setCurrentTestingChannel(null)
+                  popover.onOpen(event)
+                }}
+                size="small"
+              >
                 <Icon icon="eva:more-vertical-fill"/>
               </IconButton>
             )}
@@ -630,13 +547,7 @@ export default function ChannelTableRow({
       <Popover
         open={popover.open}
         anchorEl={popover.anchorEl}
-        onClose={() => {
-          popover.onClose()
-          // 如果在关闭后没有进一步操作，重置当前渠道
-          if (!check.value && !confirmDelete.value && !updateBalanceOption.value) {
-            setCurrentTestingChannel(null)
-          }
-        }}
+        onClose={popover.onClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
@@ -698,28 +609,6 @@ export default function ChannelTableRow({
         </MenuItem>
       </Popover>
 
-      <StyledMenu
-        id="test-model-menu"
-        MenuListProps={{
-          'aria-labelledby': 'test-model-button'
-        }}
-        anchorEl={openTest}
-        open={!!openTest}
-        onClose={() => {
-          setOpenTest(null)
-        }}
-      >
-        {modelMap.map((model) => (
-          <MenuItem
-            key={'test_model-' + model}
-            onClick={() => {
-              handleResponseTime(model)
-            }}
-          >
-            {model}
-          </MenuItem>
-        ))}
-      </StyledMenu>
       <TableRow
         sx={{
           '&:hover': {
@@ -780,48 +669,6 @@ export default function ChannelTableRow({
                   ))}
                 </Box>
               </Grid>
-
-              {item.test_model && (
-                <Grid item xs={12}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '10px',
-                      m: 1,
-                      px: 1,
-                      py: 0.5,
-                      bgcolor: 'background.neutral',
-                      borderRadius: 1,
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      component="div"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.secondary',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <Icon icon="mdi:speedometer" sx={{ mr: 0.5 }}/> {t('channel_row.testModels') + ':'}
-                    </Typography>
-                    <Label
-                      variant="soft"
-                      color="info"
-                      key={item.test_model}
-                      sx={{ fontSize: '0.75rem', cursor: 'pointer' }}
-                      onClick={() => {
-                        copy(item.test_model, t('channel_row.testModels'))
-                      }}
-                    >
-                      {item.test_model}
-                    </Label>
-                  </Box>
-                </Grid>
-              )}
 
               {item.proxy && (
                 <Grid item xs={12}>
@@ -1124,19 +971,16 @@ export default function ChannelTableRow({
                                     </TableCell>
                                     <TableCell align="center">
                                       <Stack direction="row" spacing={1} justifyContent="center">
-                                        <Tooltip title={t('channel_row.testModels')} placement="top">
+                                        <Tooltip title={t('channel_row.check')} placement="top">
                                           <IconButton
                                             size="small"
                                             sx={{ p: 0.5, color: 'info.main' }}
-                                            onClick={(event) => {
-                                              handleTagChannelTest(channel)
-                                              // 记录点击位置用于弹出模型列表
-                                              if (channel.models.split(',').length > 1) {
-                                                tagModelPopover.onOpen(event)
-                                              }
+                                            onClick={() => {
+                                              setCurrentTestingChannel(channel)
+                                              setOpenCheck(true)
                                             }}
                                           >
-                                            <Icon icon="mdi:speedometer" width={18} height={18}/>
+                                            <Icon icon="solar:checklist-minimalistic-bold" width={18} height={18}/>
                                           </IconButton>
                                         </Tooltip>
 
@@ -1252,7 +1096,14 @@ export default function ChannelTableRow({
           </Button>
         </DialogActions>
       </Dialog>
-      <ChannelCheck item={currentTestingChannel || item} open={openCheck} onClose={() => setOpenCheck(false)}/>
+      <ChannelCheck
+        item={currentTestingChannel || item}
+        open={openCheck}
+        onClose={() => {
+          setOpenCheck(false)
+          setCurrentTestingChannel(null)
+        }}
+      />
 
       <ConfirmDialog
         open={tagDeleteConfirm.value}
@@ -1335,54 +1186,6 @@ export default function ChannelTableRow({
         modelOptions={modelOptions}
         prices={prices}
       />
-
-      <Popover
-        open={tagModelPopover.open}
-        anchorEl={tagModelPopover.anchorEl}
-        onClose={tagModelPopover.onClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        PaperProps={{
-          sx: { minWidth: 140 }
-        }}
-      >
-        <MenuList>
-          {currentTestingChannel &&
-            currentTestingChannel.models.split(',').map((model) => (
-              <MenuItem
-                key={`tag-test-model-${model}`}
-                onClick={() => {
-                  manageChannel(currentTestingChannel.id, 'test', model).then(({ success, time }) => {
-                    if (success) {
-                      showSuccess(
-                        t('channel_row.modelTestSuccess', {
-                          channel: currentTestingChannel.name,
-                          model,
-                          time: time.toFixed(2)
-                        })
-                      )
-                      // 更新本地状态
-                      setTagChannels((prev) =>
-                        prev.map((c) =>
-                          c.id === currentTestingChannel.id
-                            ? {
-                              ...c,
-                              test_time: Date.now() / 1000,
-                              response_time: time * 1000
-                            }
-                            : c
-                        )
-                      )
-                    }
-                  })
-                  tagModelPopover.onClose()
-                }}
-              >
-                {model}
-              </MenuItem>
-            ))}
-        </MenuList>
-      </Popover>
 
       <ConfirmDialog
         open={batchConfirm.value}
@@ -1510,7 +1313,9 @@ ChannelTableRow.propTypes = {
   onRefresh: PropTypes.func,
   groupOptions: PropTypes.array,
   modelOptions: PropTypes.array,
-  prices: PropTypes.array
+  prices: PropTypes.array,
+  selected: PropTypes.bool,
+  onSelect: PropTypes.func
 }
 
 function renderBalance(type, balance) {

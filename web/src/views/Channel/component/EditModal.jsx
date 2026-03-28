@@ -1014,7 +1014,8 @@ const EditModal = ({ open, channelId, onCancel, onOk, groupOptions, isTag, model
             }
 
             return (
-              <form noValidate onSubmit={handleSubmit}>
+              <>
+                <form noValidate onSubmit={handleSubmit}>
                 <FormControl fullWidth error={Boolean(touched.type && errors.type)}
                              sx={{ ...theme.typography.otherInput }}>
                   <InputLabel htmlFor="channel-type-label">{customizeT(inputLabel.type)}</InputLabel>
@@ -1853,32 +1854,6 @@ const EditModal = ({ open, channelId, onCancel, onOk, groupOptions, isTag, model
                       id="helper-tex-channel-proxy-label"> {customizeT(inputPrompt.proxy)} </FormHelperText>
                   )}
                 </FormControl>
-                {inputPrompt.test_model && (
-                  <FormControl fullWidth error={Boolean(touched.test_model && errors.test_model)}
-                               sx={{ ...theme.typography.otherInput }}>
-                    <InputLabel htmlFor="channel-test_model-label">{customizeT(inputLabel.test_model)}</InputLabel>
-                    <OutlinedInput
-                      id="channel-test_model-label"
-                      label={customizeT(inputLabel.test_model)}
-                      type="text"
-                      disabled={hasTag}
-                      value={values.test_model}
-                      name="test_model"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      inputProps={{}}
-                      aria-describedby="helper-text-channel-test_model-label"
-                    />
-                    {touched.test_model && errors.test_model ? (
-                      <FormHelperText error id="helper-tex-channel-test_model-label">
-                        {errors.test_model}
-                      </FormHelperText>
-                    ) : (
-                      <FormHelperText
-                        id="helper-tex-channel-test_model-label"> {customizeT(inputPrompt.test_model)} </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
                 {inputPrompt.only_chat && (
                   <FormControl fullWidth>
                     <FormControlLabel
@@ -2050,7 +2025,8 @@ const EditModal = ({ open, channelId, onCancel, onOk, groupOptions, isTag, model
                     {t('common.submit')}
                   </Button>
                 </DialogActions>
-              </form>
+                </form>
+              </>
             )
           }}
         </Formik>
